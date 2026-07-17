@@ -1,26 +1,8 @@
 import streamlit as st
 from order_processor import process_orders
+from components.authentication import check_password
 
-def check_password():
-    if st.session_state.get("authenticated", False):
-        return True
-
-    st.title("🌸 The Daily Blooms Dashboard")
-
-    password = st.text_input(
-        "Password",
-        type="password"
-    )
-
-    if st.button("Login"):
-        if password == st.secrets["APP_PASSWORD"]:
-            st.session_state["authenticated"] = True
-            st.rerun()
-        else:
-            st.error("Incorrect password")
-
-    return False
-
+# displays login page to authenticate users
 if not check_password():
     st.stop()
 
@@ -31,7 +13,8 @@ st.set_page_config(
     layout="wide"
 )
 
-st.header("The Daily Blooms Order Dashboard 🌸")
+# dashboard header
+st.header("The Daily Blooms Dashboard 🌸")
 
 df = process_orders()
 
