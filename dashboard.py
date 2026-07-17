@@ -22,4 +22,4 @@ st.header("The Daily Blooms Dashboard 🌸")
 filtered = display_order_details_table()
 
 # summary tables 
-display_order_summary_tables()
+display_order_summary_tables(filtered)
