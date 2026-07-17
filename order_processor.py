@@ -2,6 +2,7 @@ import pandas as pd
 from shopify_client import get_orders
 import re
 from datetime import datetime
+import orders
 
 # definining add-on products
 MUSIC_BOX_SKUS = {
