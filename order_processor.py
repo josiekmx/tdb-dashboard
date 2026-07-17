@@ -51,10 +51,12 @@ def get_delivery_date(order, item):
         return match.group()
     return None
 
+# standardise dates to "%Y-%m-%d" format
 def standardise_date(date_str):
     if not date_str:
         return None
 
+    # possible data formats in raw data
     formats = [
         "%Y-%m-%d",   # 2026-07-30
         "%d/%m/%Y",   # 25/6/2026
@@ -66,8 +68,6 @@ def standardise_date(date_str):
             return date.strftime("%Y-%m-%d")
         except ValueError:
             continue
-
-    print(f"Warning: Unknown date format: {date_str}")
     return None
 
 
@@ -87,8 +87,8 @@ def get_delivery_slot(order, item):
             if prop["name"] == name and prop["value"]:
                 return prop["value"]
             
-    # if no delivery or pickup timeslot is available,
-    # search for delivery or pickup timeslotwithin given tags
+    # if no delivery or pickup timeslot is available in property values,
+    # search for delivery or pickup timeslot within given tags
     if "9:00 AM - 2:00 PM" in order["tags"]:
         return "9:00 AM - 2:00 PM"
     if "12:00 PM - 3:00 PM" in order["tags"]:
@@ -102,6 +102,7 @@ def get_delivery_slot(order, item):
     if "walk in" in order["tags"].lower():
         return "Walk In"
     if "pickup" in order["tags"].lower():
+        # formatting the pickup informatiion to include time of pickup
         m = re.search(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm)", order["tags"])
         if m:
             hour = int(m.group(1))
@@ -113,9 +114,11 @@ def get_delivery_slot(order, item):
     m = re.search(r"\b\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm)\b", tags)
     if m:
         return f"Custom - {m.group()}"
-
     return None
 
+# updates addon item information accurately with
+# understanding of the sku name
+# eg. F-Ribbon-Polaroid-FRE50 -> ribbon, polaroid, scent is updated to True
 def update_addons_using_sku(sku, ribbon, music_box, polaroid, scent):
     lowercase_sku = str(sku).lower()
     updated_addon_list = [ribbon, music_box.copy(), polaroid, scent.copy()]
@@ -135,12 +138,14 @@ def update_addons_using_sku(sku, ribbon, music_box, polaroid, scent):
 
     return updated_addon_list
 
+# can use this later to show delivery type
 def get_delivery_type(order, item):
     delivery_type = None
     for prop in item["properties"]:
         if prop["name"] == "Selection":
-            delivery_type = prop["value"]   # "Delivery" or "Pickup"
+            delivery_type = prop["value"]
             break
+    # is a delivery condition needed as well?
     if "pickup" in order["tags"].lower() or "pick up" in order["tags"].lower():
         delivery_type = "Pickup"
     return delivery_type
@@ -172,9 +177,9 @@ def process_orders():
     processed_rows = []
     for order_id, group in df.groupby("order"):
         ribbon = False
-        music_box = [] # can improve by saying specifically what music box
+        music_box = []
         polaroid = False
-        scent = [] # can improve by saying specifically what scent
+        scent = []
         main_sku = None
         qty = None
         delivery_date = None
@@ -192,8 +197,8 @@ def process_orders():
             elif is_scent(sku):
                 scent.append(sku)
             else:
-                if main_sku is not None:
-                    main_sku = f"COMPLEX ORDER (>1 main item)"
+                if main_sku is not None: 
+                    main_sku = f"COMPLEX ORDER (>1 main item)" # mb here can add order description
                     break
                 main_sku = sku
                 qty = row["qty"]
@@ -202,7 +207,7 @@ def process_orders():
                 delivery_type = row["delivery_type"]
 
         if pd.isna(main_sku) or str(main_sku).strip() == "":
-            main_sku = "CUSTOM ORDER (Please check details manually)"
+            main_sku = "CUSTOM ORDER (Please check details manually)" # mb here can add order description
 
         [ribbon, music_box, polaroid, scent] = update_addons_using_sku(main_sku, ribbon, music_box, polaroid, scent)
         

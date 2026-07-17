@@ -1,5 +1,4 @@
 import streamlit as st
-from order_processor import process_orders
 from components.authentication import check_password
 from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
@@ -18,8 +17,8 @@ st.set_page_config(
 # dashboard header
 st.header("The Daily Blooms Dashboard 🌸")
 
-# order_details_table
-filtered = display_order_details_table()
+# order details table
+filtered_table_data = display_order_details_table()
 
 # summary tables 
-display_order_summary_tables(filtered)
+display_order_summary_tables(filtered_table_data)

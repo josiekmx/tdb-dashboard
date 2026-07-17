@@ -6,12 +6,10 @@ def display_order_details_table():
 
     # display drop down menu to select date and delivery/pickup slot
     dates = sorted(df["Delivery Date"].dropna().unique())
-
     selected_date = st.selectbox(
         "Delivery Date",
         dates
     )
-
     slots = sorted(df["Delivery Slot"].dropna().unique())
     selected_slots = st.multiselect(
         "Time Slot(s)",
@@ -19,26 +17,22 @@ def display_order_details_table():
     )
 
     # filter orders according to data and delivery/pickup slot
-    filtered = df[
-        df["Delivery Date"] == selected_date
-    ]
+    filtered = df[df["Delivery Date"] == selected_date]
     if selected_slots:
-        filtered = filtered[
-            filtered["Delivery Slot"].isin(selected_slots)
-        ]
+        filtered = filtered[filtered["Delivery Slot"].isin(selected_slots)]
     else:
         # If nothing is selected, show no rows
         filtered = filtered.iloc[0:0]
 
-
+    # sort by sku
     filtered = filtered.sort_values(by="SKU")
     display_df = filtered.drop(columns=['Delivery Date', 'Delivery Slot'])
 
 
-    row_height = 35        # Approximate height of each row (pixels)
-    header_height = 38     # Header height
-    max_height = 700       # Don't let it grow indefinitely
-
+    # optimise table size
+    row_height = 35 
+    header_height = 38
+    max_height = 700
     height = min(header_height + len(display_df) * row_height, max_height)
 
     st.dataframe(
@@ -47,6 +41,7 @@ def display_order_details_table():
         height=height
     )
 
+    # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)
 
     return filtered
