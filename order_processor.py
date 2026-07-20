@@ -2,7 +2,6 @@ import pandas as pd
 from shopify_client import get_orders
 import re
 from datetime import datetime
-import orders
 import json
 
 # definining add-on products
