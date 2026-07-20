@@ -248,9 +248,6 @@ def process_orders():
 
     processed_df = pd.DataFrame(processed_rows)
 
-    st.write("Processed columns:")
-    st.write(processed_df.columns.tolist()) 
-
     # only keep relevant orders from today onwards
     today = pd.Timestamp.now(tz="Asia/Singapore").date()
     processed_df["Delivery Date"] = pd.to_datetime(
@@ -260,9 +257,6 @@ def process_orders():
     # sort orders
     sorted_processed_df = current_orders_df.sort_values(by=["Delivery Date", "Delivery Slot", "SKU"])
     sorted_processed_df.to_csv("sorted_processed_df.csv", index=False)
-
-    st.write("Returned columns:")
-    st.write(sorted_processed_df.columns.tolist())
 
     return  sorted_processed_df
 
