@@ -159,7 +159,18 @@ def process_orders():
     orders = get_orders()
 
     # inspect orders
-    st.json(orders[0:20]) 
+    # st.json(orders[0:20]) 
+    order_number = "#TDB91267"
+
+    matching_order = next(
+        (order for order in orders if order["name"] == order_number),
+        None
+    )
+
+    if matching_order:
+        st.json(matching_order)
+    else:
+        st.error(f"Order {order_number} not found.")
 
 
     # looping through json of retrieved orders
