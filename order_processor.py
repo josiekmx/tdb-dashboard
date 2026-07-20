@@ -261,6 +261,9 @@ def process_orders():
     sorted_processed_df = current_orders_df.sort_values(by=["Delivery Date", "Delivery Slot", "SKU"])
     sorted_processed_df.to_csv("sorted_processed_df.csv", index=False)
 
+    st.write("Returned columns:")
+    st.write(sorted_processed_df.columns.tolist())
+
     return  sorted_processed_df
 
 
