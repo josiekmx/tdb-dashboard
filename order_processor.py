@@ -159,7 +159,7 @@ def process_orders():
     orders = get_orders()
 
     # inspect orders
-    st.json(orders[0]) 
+    st.json(orders[0:20]) 
 
 
     # looping through json of retrieved orders
