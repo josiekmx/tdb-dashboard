@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 import json
 import os 
+import streamlit as st
 
 # definining add-on products
 MUSIC_BOX_SKUS = {
@@ -158,10 +159,7 @@ def process_orders():
     orders = get_orders()
 
     # inspect orders
-    os.makedirs("debug", exist_ok=True)
-
-    with open("debug/shopify_orders.json", "w") as f:
-        json.dump(orders, f, indent=2)
+    st.json(orders[0]) 
 
 
     # looping through json of retrieved orders
