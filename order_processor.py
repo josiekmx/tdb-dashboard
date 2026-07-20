@@ -3,6 +3,7 @@ from shopify_client import get_orders
 import re
 from datetime import datetime
 import orders
+import json
 
 # definining add-on products
 MUSIC_BOX_SKUS = {
@@ -155,6 +156,11 @@ def get_delivery_type(order, item):
 # main function to process orders
 def process_orders():
     orders = get_orders()
+
+    # inspect orders
+    with open("debug/shopify_orders.json", "w") as f:
+        json.dump(orders, f, indent=2)
+
 
     # looping through json of retrieved orders
     # and extracting the necessary order details
