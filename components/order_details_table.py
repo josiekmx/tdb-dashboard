@@ -4,6 +4,9 @@ from order_processor import process_orders
 def display_order_details_table():
     df = process_orders()
 
+    st.write("Columns received by UI:")
+    st.write(df.columns.tolist())
+
     # display drop down menu to select date and delivery/pickup slot
     dates = sorted(df["Delivery Date"].dropna().unique())
     selected_date = st.selectbox(
