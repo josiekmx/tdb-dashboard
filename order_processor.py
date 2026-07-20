@@ -248,6 +248,9 @@ def process_orders():
 
     processed_df = pd.DataFrame(processed_rows)
 
+    st.write("Processed columns:")
+    st.write(processed_df.columns.tolist()) 
+
     # only keep relevant orders from today onwards
     today = pd.Timestamp.now(tz="Asia/Singapore").date()
     processed_df["Delivery Date"] = pd.to_datetime(
