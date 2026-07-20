@@ -160,17 +160,17 @@ def process_orders():
 
     # inspect orders
     # st.json(orders[0:20]) 
-    order_number = "#TDB91267"
+    # order_number = "#TDB91267"
 
-    matching_order = next(
-        (order for order in orders if order["name"] == order_number),
-        None
-    )
+    # matching_order = next(
+    #     (order for order in orders if order["name"] == order_number),
+    #     None
+    # )
 
-    if matching_order:
-        st.json(matching_order)
-    else:
-        st.error(f"Order {order_number} not found.")
+    # if matching_order:
+    #     st.json(matching_order)
+    # else:
+    #     st.error(f"Order {order_number} not found.")
 
 
     # looping through json of retrieved orders
@@ -203,6 +203,7 @@ def process_orders():
         delivery_date = None
         delivery_slot = None
         delivery_type = None
+        custom_details = ""
 
         for _, row in group.iterrows():
             sku = row["sku"]
@@ -226,6 +227,7 @@ def process_orders():
 
         if pd.isna(main_sku) or str(main_sku).strip() == "":
             main_sku = "CUSTOM ORDER (Please check details manually)" # mb here can add order description
+            custom_details = row["product"]
 
         [ribbon, music_box, polaroid, scent] = update_addons_using_sku(main_sku, ribbon, music_box, polaroid, scent)
         
@@ -233,6 +235,7 @@ def process_orders():
         processed_rows.append({
             "Order": order_id,
             "SKU": main_sku,
+            "Custom Details": custom_details,
             "Quantity": qty,
             "Ribbon": ribbon,
             "Music Box": music_box,
