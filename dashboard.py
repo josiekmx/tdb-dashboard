@@ -19,8 +19,10 @@ st.header("The Daily Blooms Dashboard 🌸")
 
 # enables refresh
 if st.button("Refresh"):
-    st.session_state.pop("selected_date", None)
-    st.session_state.pop("selected_slots", None)
+    # Reset filters
+    st.session_state.selected_date = None
+    st.session_state.selected_slots = None
+
     st.rerun()
 
 # order details table
