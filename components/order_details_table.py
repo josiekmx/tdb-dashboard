@@ -35,10 +35,11 @@ def display_order_details_table():
     max_height = 700
     height = min(header_height + len(display_df) * row_height, max_height)
 
-    st.dataframe(
+    edited_df = st.data_editor(
         display_df,
         use_container_width=True,
-        height=height
+        height=height,
+        hide_index=True
     )
 
     # insert empty space to optimise ui
