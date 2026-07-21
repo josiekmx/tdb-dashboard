@@ -9,12 +9,14 @@ def display_order_details_table():
     dates = sorted(df["Delivery Date"].dropna().unique())
     selected_date = st.selectbox(
         "Delivery Date",
-        dates
+        dates,
+        key = "selected_date"
     )
     slots = sorted(df["Delivery Slot"].dropna().unique())
     selected_slots = st.multiselect(
         "Time Slot(s)",
-        options=slots
+        options=slots,
+        key = "selected_slots"
     )
 
     # filter orders according to data and delivery/pickup slot
