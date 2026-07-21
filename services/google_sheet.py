@@ -78,3 +78,15 @@ def sync_orders(shopify_df):
     sheet.clear()
     sheet.append_row(existing.columns.tolist())
     sheet.append_rows(existing.values.tolist())
+
+
+def save_assignments(assignments_df):
+    """
+    Replace the Assignments sheet with the edited assignments.
+    """
+
+    sheet.clear()
+
+    sheet.append_row(assignments_df.columns.tolist())
+
+    sheet.append_rows(assignments_df.values.tolist())

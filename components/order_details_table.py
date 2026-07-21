@@ -1,5 +1,6 @@
 import streamlit as st
 from order_processor import process_orders
+from services.google_sheet import save_assignments
 
 def display_order_details_table():
     df = process_orders()
@@ -35,12 +36,33 @@ def display_order_details_table():
     max_height = 700
     height = min(header_height + len(display_df) * row_height, max_height)
 
+    disabled = [
+        c for c in display_df.columns
+        if c not in ["Assignee", "Completed"]
+    ]
     edited_df = st.data_editor(
         display_df,
         use_container_width=True,
         height=height,
-        hide_index=True
+        hide_index=True,
+        disabled=disabled,
+        column_config={
+            "Assignee": st.column_config.SelectboxColumn(
+                "Assignee",
+                options=["","Justin", "Josie", "Puiyee", "Enie"]
+            ),
+            "Completed": st.column_config.CheckboxColumn(
+                "Completed"
+            )
+        }
     )
+
+    if st.button("Save Changes"):
+        assignment_updates = edited_df[
+            ["Order", "Assignee", "Completed"]
+        ]
+        save_assignments(assignment_updates)
+        st.success("Assignments saved")
 
     # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)
