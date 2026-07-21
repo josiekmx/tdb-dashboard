@@ -76,49 +76,18 @@ def standardise_date(date_str):
 
 
 def get_delivery_slot(order, item):
-    slot_names = [
-        "Delivery Timeslot Weekday",
-        "Delivery Timeslot Weekend",
-        "Delivery Timeslot Seasonal",
-        "Pickup Timeslot Weekday",
-        "Pickup Timeslot Weekend",
-    ]
-
-    # loop through properties and return 
-    # delivery or pickup timeslot if this property is available
-    for name in slot_names:
-        for prop in item.get("properties", []):
-            if prop["name"] == name and prop["value"]:
-                return prop["value"]
-            
-    # if no delivery or pickup timeslot is available in property values,
     # search for delivery or pickup timeslot within given tags
     if "9:00 AM - 2:00 PM" in order["tags"]:
         return "9:00 AM - 2:00 PM"
-    if "12:00 PM - 3:00 PM" in order["tags"]:
-        return "12:00 PM - 3:00 PM"
-    if "3:00 PM - 5:00 PM" in order["tags"]:
-        return "3:00 PM - 5:00 PM"
-    if "1:00 PM - 6:00 PM" in order["tags"]:
+    elif "1:00 PM - 6:00 PM" in order["tags"]:
         return "1:00 PM - 6:00 PM"
-    if "5:00 PM - 10:00 PM" in order["tags"]:
+    elif "5:00 PM - 10:00 PM" in order["tags"]:
         return "5:00 PM - 10:00 PM"
-    if "walk in" in order["tags"].lower():
-        return "Walk In"
-    if "pickup" in order["tags"].lower():
-        # formatting the pickup informatiion to include time of pickup
-        m = re.search(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm)", order["tags"])
-        if m:
-            hour = int(m.group(1))
-            minute = m.group(2) or "00"
-            ampm = m.group(3).upper()
-            return f"Pickup - {hour}:{minute} {ampm}"
-        return "Pickup"
-    tags = order["tags"]
-    m = re.search(r"\b\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm)\b", tags)
-    if m:
-        return f"Custom - {m.group()}"
-    return None
+    elif "pickup" in order["tags"].lower() or  "pick up" in order["tags"].lower():
+        return "Pick up"
+    else:
+        # irregular category
+        return "Custom Time"
 
 # updates addon item information accurately with
 # understanding of the sku name
