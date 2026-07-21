@@ -69,6 +69,9 @@ def display_order_details_table():
         }
     )
 
+    # insert empty space to optimise ui
+    st.markdown("<br>", unsafe_allow_html=True)
+
     if st.button("Save Changes"):
         assignment_updates = edited_df[
             ["Order", "Assignee", "Completed"]
