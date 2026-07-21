@@ -38,24 +38,24 @@ def display_order_details_table():
 
     # sort by sku
 
-    # slot_order = {
-    #     "9:00 AM - 2:00 PM": 1,
-    #     "1:00 PM - 6:00 PM": 2,
-    #     "5:00 PM - 10:00 PM": 3,
-    #     "Pick up": 4,
-    #     "Custom": 5
-    # }
+    slot_order = {
+        "9:00 AM - 2:00 PM": 1,
+        "1:00 PM - 6:00 PM": 2,
+        "5:00 PM - 10:00 PM": 3,
+        "Pick up": 4,
+        "Custom": 5
+    }
 
-    # filtered["Slot Order"] = filtered["Delivery Slot"].map(slot_order).fillna(999)
-    # filtered = filtered.sort_values(
-    #     by=["SKU", "Completed", "Slot Order"],
-    #     ascending=[True, True, True]
-    # )
-    # filtered = filtered.drop(columns=["Slot Order"])
-    # display_df = filtered.drop(columns=['Delivery Date'])
-
-    filtered = filtered.sort_values(by="SKU")
+    filtered["Slot Order"] = filtered["Delivery Slot"].map(slot_order).fillna(999)
+    filtered = filtered.sort_values(
+        by=["SKU", "Completed", "Slot Order"],
+        ascending=[True, True, True]
+    )
+    filtered = filtered.drop(columns=["Slot Order"])
     display_df = filtered.drop(columns=['Delivery Date'])
+
+    # filtered = filtered.sort_values(by="SKU")
+    # display_df = filtered.drop(columns=['Delivery Date'])
 
 
     # optimise table size
