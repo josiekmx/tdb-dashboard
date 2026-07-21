@@ -84,7 +84,8 @@ def save_assignments(assignments_df):
     """
     Replace the Assignments sheet with the edited assignments.
     """
-
+    assignments_df = assignments_df.fillna("")
+    
     sheet.clear()
 
     sheet.append_row(assignments_df.columns.tolist())
