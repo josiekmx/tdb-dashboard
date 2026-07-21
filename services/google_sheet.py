@@ -8,21 +8,13 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-if "gcp_service_account" in st.secrets:
-    creds = Credentials.from_service_account_info(
+creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"],
-        scopes=SCOPES,
-    )
-else:
-    creds = Credentials.from_service_account_file(
-        "service_account.json",
         scopes=SCOPES,
     )
 
 client = gspread.authorize(creds)
-
 sheet = client.open("The Daily Blooms Dashboard Data").worksheet("Assignments")
-
 
 def load_assignments():
     records = sheet.get_all_records()
