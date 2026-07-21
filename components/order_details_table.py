@@ -7,6 +7,7 @@ def display_order_details_table():
 
     # display drop down menu to select date and delivery/pickup slot
     dates = sorted(df["Delivery Date"].dropna().unique())
+
     selected_date = st.selectbox(
         "Delivery Date",
         dates,
@@ -14,22 +15,17 @@ def display_order_details_table():
             else dates.index(st.session_state.selected_date),
         key="selected_date"
     )
+
     slots = sorted(df["Delivery Slot"].dropna().unique())
-    default_slots = (
-    slots
-    if st.session_state.get("selected_slots") is None
-    else [
-        slot
-        for slot in st.session_state.selected_slots
-        if slot in slots
-    ]
-    )
+
+    # If nothing is selected, automatically select every slot
+    if not st.session_state.get("selected_slots"):
+        st.session_state.selected_slots = slots
 
     selected_slots = st.multiselect(
         "Time Slot(s)",
         options=slots,
-        default=default_slots,
-        key="selected_slots"
+        key="selected_slots",
     )
 
     # filter orders according to data and delivery/pickup slot

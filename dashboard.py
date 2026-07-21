@@ -21,7 +21,7 @@ st.header("The Daily Blooms Dashboard 🌸")
 if st.button("Refresh"):
     # Reset filters
     st.session_state.selected_date = None
-    st.session_state.selected_slots = None
+    st.session_state.selected_slots = []
 
     st.rerun()
 
