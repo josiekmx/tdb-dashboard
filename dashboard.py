@@ -17,6 +17,10 @@ st.set_page_config(
 # dashboard header
 st.header("The Daily Blooms Dashboard 🌸")
 
+# enables refresh
+if st.button("Refresh"):
+    st.rerun()
+
 # order details table
 filtered_table_data = display_order_details_table()
 
