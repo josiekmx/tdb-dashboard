@@ -7,15 +7,15 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
-
 creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"],
         scopes=SCOPES,
     )
-
 client = gspread.authorize(creds)
 sheet = client.open("The Daily Blooms Dashboard Data").worksheet("Assignments")
 
+# retrieve order assignment and completion status
+# from google sheet
 def load_assignments():
     records = sheet.get_all_records()
 
@@ -30,24 +30,20 @@ def load_assignments():
 
     return pd.DataFrame(records)
 
+# add new shopify orders to assignment google sheet,
+# remove already fulfilled orders
+# preserve assignee and completion status values
+# already in google sheet
 def sync_orders(shopify_df):
-    """
-    Synchronise the Assignments sheet with Shopify.
-
-    - Adds new Shopify orders
-    - Removes orders no longer in Shopify
-    - Preserves Assignee and Completed values
-    """
-
     existing = load_assignments()
 
     # Current Shopify orders
     shopify_orders = set(shopify_df["Order"])
 
-    # Keep only orders that still exist
+    # Keep only active orders that still exist 
+    # in shopify database
     if not existing.empty:
         existing = existing[existing["Order"].isin(shopify_orders)]
-
     existing_orders = set(existing["Order"]) if not existing.empty else set()
 
     # Add any new Shopify orders
@@ -59,7 +55,6 @@ def sync_orders(shopify_df):
                 "Assignee": "",
                 "Completed": False
             })
-
     if new_rows:
         existing = pd.concat(
             [existing, pd.DataFrame(new_rows)],
@@ -81,13 +76,8 @@ def sync_orders(shopify_df):
 
 
 def save_assignments(assignments_df):
-    """
-    Replace the Assignments sheet with the edited assignments.
-    """
     assignments_df = assignments_df.fillna("")
-    
+
     sheet.clear()
-
     sheet.append_row(assignments_df.columns.tolist())
-
     sheet.append_rows(assignments_df.values.tolist())

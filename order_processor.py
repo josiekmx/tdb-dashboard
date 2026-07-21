@@ -252,7 +252,7 @@ def process_orders():
     # Synchronise Google Sheet with current Shopify orders
     sync_orders(processed_df)
 
-    # Load assignment information
+    # Load updated assignment information
     assignments_df = load_assignments()
 
     # Merge assignment information into the dashboard

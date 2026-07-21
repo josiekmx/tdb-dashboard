@@ -36,6 +36,7 @@ def display_order_details_table():
     max_height = 700
     height = min(header_height + len(display_df) * row_height, max_height)
 
+
     disabled = [
         c for c in display_df.columns
         if c not in ["Assignee", "Completed"]
