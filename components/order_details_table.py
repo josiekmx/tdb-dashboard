@@ -38,7 +38,7 @@ def display_order_details_table():
 
     # sort by sku
     filtered = filtered.sort_values(by="SKU")
-    display_df = filtered.drop(columns=['Delivery Slot'])
+    display_df = filtered.drop(columns=['Delivery Date'])
 
 
     # optimise table size
