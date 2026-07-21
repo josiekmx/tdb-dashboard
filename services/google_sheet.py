@@ -1,18 +1,40 @@
+import pandas as pd
 import gspread
+import streamlit as st
 from google.oauth2.service_account import Credentials
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
+    "https://www.googleapis.com/auth/drive",
 ]
 
-creds = Credentials.from_service_account_file(
-    "service_account.json",
-    scopes=SCOPES
-)
+if "gcp_service_account" in st.secrets:
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=SCOPES,
+    )
+else:
+    creds = Credentials.from_service_account_file(
+        "service_account.json",
+        scopes=SCOPES,
+    )
 
 client = gspread.authorize(creds)
 
-sheet = client.open("The Daily Blooms Dashboard Data").worksheet("Assignments")
+sheet = client.open("Daily Blooms Dashboard Data").worksheet("Assignments")
 
-print(sheet.get_all_records())
+
+def load_assignments():
+    records = sheet.get_all_records()
+
+    if not records:
+        return pd.DataFrame(
+            columns=[
+                "Order",
+                "Assignee",
+                "Completed",
+                "Completed At",
+            ]
+        )
+
+    return pd.DataFrame(records)
