@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import os 
 import streamlit as st
+from services.google_sheet import sync_orders, load_assignments
 
 # definining add-on products
 MUSIC_BOX_SKUS = {
@@ -247,6 +248,19 @@ def process_orders():
         })
 
     processed_df = pd.DataFrame(processed_rows)
+
+    # Synchronise Google Sheet with current Shopify orders
+    sync_orders(processed_df)
+
+    # Load assignment information
+    assignments_df = load_assignments()
+
+    # Merge assignment information into the dashboard
+    processed_df = processed_df.merge(
+        assignments_df,
+        on="Order",
+        how="left"
+    )
 
     # only keep relevant orders from today onwards
     today = pd.Timestamp.now(tz="Asia/Singapore").date()
