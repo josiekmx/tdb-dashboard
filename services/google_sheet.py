@@ -21,7 +21,7 @@ else:
 
 client = gspread.authorize(creds)
 
-sheet = client.open("Daily Blooms Dashboard Data").worksheet("Assignments")
+sheet = client.open("The Daily Blooms Dashboard Data").worksheet("Assignments")
 
 
 def load_assignments():
@@ -32,8 +32,7 @@ def load_assignments():
             columns=[
                 "Order",
                 "Assignee",
-                "Completed",
-                "Completed At",
+                "Completed"
             ]
         )
 
