@@ -48,7 +48,7 @@ def display_order_details_table():
 
     filtered["Slot Order"] = filtered["Delivery Slot"].map(slot_order).fillna(999)
     filtered = filtered.sort_values(
-        by=["Slot Order", "Completed", "SKU"],
+        by=["SKU", "Completed", "Slot Order"],
         ascending=[True, True, True]
     )
     filtered = filtered.drop(columns=["Slot Order"])
