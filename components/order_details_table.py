@@ -101,7 +101,9 @@ def display_order_details_table():
         # st.write(assignment_updates)
 
         save_assignments(assignment_updates)
+        st.session_state.orders_editor = display_df.copy()
         st.success("Assignments saved")
+        st.rerun()
 
     # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)
