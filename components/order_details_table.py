@@ -70,11 +70,11 @@ def display_order_details_table():
         if c not in ["Assignee", "Completed"]
     ]
 
-    if "orders_editor" not in st.session_state:
-        st.session_state.orders_editor = display_df.copy()
+    # if "orders_editor" not in st.session_state:
+    #     st.session_state.orders_editor = display_df.copy()
 
     edited_df = st.data_editor(
-        st.session_state.orders_editor,
+        display_df,
         use_container_width=True,
         height=height,
         hide_index=True,
