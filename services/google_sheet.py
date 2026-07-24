@@ -53,7 +53,7 @@ def sync_orders(shopify_df):
             new_rows.append({
                 "Order": order,
                 "Assignee": "",
-                "Completed": False
+                "Completed": "No"
             })
     if new_rows:
         existing = pd.concat(
