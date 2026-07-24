@@ -12,7 +12,7 @@ def display_order_details_table():
         "Delivery Date",
         dates,
         index=0 if st.session_state.get("selected_date") is None
-            else dates.index(st.session_state.selected_date),
+            else dates.index(st.session_state.selected_date), # for refresh button 
         key="selected_date"
     )
 
@@ -36,7 +36,6 @@ def display_order_details_table():
         # If nothing is selected, show no rows
         filtered = filtered.iloc[0:0]
 
-    # sort by sku
 
     slot_order = {
         "9:00 AM - 2:00 PM": 1,
@@ -48,16 +47,11 @@ def display_order_details_table():
 
     filtered["Slot Order"] = filtered["Delivery Slot"].map(slot_order).fillna(999)
     filtered = filtered.sort_values(
-        # by=["Slot Order", "Completed", "SKU"],
         by=["Slot Order", "SKU"],
         ascending=[True, True]
-        # ascending=[True, True, True]
     )
     filtered = filtered.drop(columns=["Slot Order"])
     display_df = filtered.drop(columns=['Delivery Date'])
-
-    # filtered = filtered.sort_values(by="SKU")
-    # display_df = filtered.drop(columns=['Delivery Date'])
 
 
     # optimise table size
@@ -72,9 +66,6 @@ def display_order_details_table():
         if c not in ["Assignee", "Completed"]
     ]
 
-    # if "orders_editor" not in st.session_state:
-    #     st.session_state.orders_editor = display_df.copy()
-
     edited_df = st.data_editor(
         display_df,
         use_container_width=True,
@@ -84,7 +75,7 @@ def display_order_details_table():
         column_config={
             "Assignee": st.column_config.SelectboxColumn(
                 "Assignee",
-                options=["","Justin", "Josie", "Puiyee", "Enie"]
+                options=["","Justin", "Josie", "Puiyee", "Enie"] # can remove this part
             ),
             "Completed": st.column_config.SelectboxColumn(
                 "Completed",
@@ -95,17 +86,5 @@ def display_order_details_table():
 
     # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)
-
-    # if st.button("Save Changes"):
-    #     assignment_updates = edited_df[
-    #         ["Order", "Assignee", "Completed"]
-    #     ]
-    #     # st.write(assignment_updates)
-
-    #     save_assignments(assignment_updates)
-    #     st.success("Assignments saved")
-
-    # # insert empty space to optimise ui
-    # st.markdown("<br>", unsafe_allow_html=True)
 
     return filtered
