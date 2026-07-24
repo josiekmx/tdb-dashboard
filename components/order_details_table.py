@@ -50,7 +50,8 @@ def display_order_details_table():
     filtered = filtered.sort_values(
         # by=["Slot Order", "Completed", "SKU"],
         by=["Slot Order", "SKU"],
-        ascending=[True, True, True]
+        ascending=[True, True]
+        # ascending=[True, True, True]
     )
     filtered = filtered.drop(columns=["Slot Order"])
     display_df = filtered.drop(columns=['Delivery Date'])
