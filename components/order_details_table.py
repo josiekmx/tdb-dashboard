@@ -94,7 +94,7 @@ def display_order_details_table():
         assignment_updates = edited_df[
             ["Order", "Assignee", "Completed"]
         ]
-         st.write(assignment_updates)
+        st.write(assignment_updates)
 
         save_assignments(assignment_updates)
         st.success("Assignments saved")
