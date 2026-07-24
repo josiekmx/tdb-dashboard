@@ -18,13 +18,12 @@ st.set_page_config(
 st.header("The Daily Blooms Dashboard 🌸")
 
 # enables refresh
-# if st.button("Refresh"):
-#     # Reset filters
-#     st.session_state.pop("orders_editor", None)
-#     st.session_state.selected_date = None
-#     st.session_state.selected_slots = []
+if st.button("Refresh"):
+    # Reset filters
+    st.session_state.selected_date = None
+    st.session_state.selected_slots = []
 
-#     st.rerun()
+    st.rerun()
 
 # order details table
 filtered_table_data = display_order_details_table()
