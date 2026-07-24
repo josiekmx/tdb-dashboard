@@ -80,8 +80,9 @@ def display_order_details_table():
                 "Assignee",
                 options=["","Justin", "Josie", "Puiyee", "Enie"]
             ),
-            "Completed": st.column_config.CheckboxColumn(
-                "Completed"
+            "Completed": st.column_config.SelectboxColumn(
+                "Completed",
+                options=["Yes","No"]
             )
         }
     )
