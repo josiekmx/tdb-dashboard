@@ -218,18 +218,18 @@ def process_orders():
 
     processed_df = pd.DataFrame(processed_rows)
 
-    # Synchronise Google Sheet with current Shopify orders
-    sync_orders(processed_df)
+    # # Synchronise Google Sheet with current Shopify orders
+    # sync_orders(processed_df)
 
-    # Load updated assignment information
-    assignments_df = load_assignments()
+    # # Load updated assignment information
+    # assignments_df = load_assignments()
 
-    # Merge assignment information into the dashboard
-    processed_df = processed_df.merge(
-        assignments_df,
-        on="Order",
-        how="left"
-    )
+    # # Merge assignment information into the dashboard
+    # processed_df = processed_df.merge(
+    #     assignments_df,
+    #     on="Order",
+    #     how="left"
+    # )
 
     # only keep relevant orders from today onwards
     today = pd.Timestamp.now(tz="Asia/Singapore").date()

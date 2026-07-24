@@ -94,16 +94,16 @@ def display_order_details_table():
     # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)
 
-    if st.button("Save Changes"):
-        assignment_updates = edited_df[
-            ["Order", "Assignee", "Completed"]
-        ]
-        # st.write(assignment_updates)
+    # if st.button("Save Changes"):
+    #     assignment_updates = edited_df[
+    #         ["Order", "Assignee", "Completed"]
+    #     ]
+    #     # st.write(assignment_updates)
 
-        save_assignments(assignment_updates)
-        st.success("Assignments saved")
+    #     save_assignments(assignment_updates)
+    #     st.success("Assignments saved")
 
-    # insert empty space to optimise ui
-    st.markdown("<br>", unsafe_allow_html=True)
+    # # insert empty space to optimise ui
+    # st.markdown("<br>", unsafe_allow_html=True)
 
     return filtered
