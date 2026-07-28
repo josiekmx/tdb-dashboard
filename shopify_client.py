@@ -10,7 +10,8 @@ TOKEN = st.secrets["TOKEN"]
 # orders will not be retrieved
 
 # retrieves orders from shopify database
-# and returns the latest 250 open orders in json format
+# and returns the latest 250 open orders created
+# in json format
 def get_orders(limit=250):
     url = f"https://{SHOP}/admin/api/2026-01/orders.json"
     headers = {

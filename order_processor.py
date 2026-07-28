@@ -2,6 +2,9 @@ import pandas as pd
 from shopify_client import get_orders
 import re
 from datetime import datetime
+import json
+import os 
+import streamlit as st
 
 # definining add-on products
 MUSIC_BOX_SKUS = {
@@ -51,10 +54,12 @@ def get_delivery_date(order, item):
         return match.group()
     return None
 
+# standardise dates to "%Y-%m-%d" format
 def standardise_date(date_str):
     if not date_str:
         return None
 
+    # possible data formats in raw data
     formats = [
         "%Y-%m-%d",   # 2026-07-30
         "%d/%m/%Y",   # 25/6/2026
@@ -66,56 +71,26 @@ def standardise_date(date_str):
             return date.strftime("%Y-%m-%d")
         except ValueError:
             continue
-
-    print(f"Warning: Unknown date format: {date_str}")
     return None
 
 
 def get_delivery_slot(order, item):
-    slot_names = [
-        "Delivery Timeslot Weekday",
-        "Delivery Timeslot Weekend",
-        "Delivery Timeslot Seasonal",
-        "Pickup Timeslot Weekday",
-        "Pickup Timeslot Weekend",
-    ]
-
-    # loop through properties and return 
-    # delivery or pickup timeslot if this property is available
-    for name in slot_names:
-        for prop in item.get("properties", []):
-            if prop["name"] == name and prop["value"]:
-                return prop["value"]
-            
-    # if no delivery or pickup timeslot is available,
-    # search for delivery or pickup timeslotwithin given tags
+    # search for delivery or pickup timeslot within given tags
     if "9:00 AM - 2:00 PM" in order["tags"]:
         return "9:00 AM - 2:00 PM"
-    if "12:00 PM - 3:00 PM" in order["tags"]:
-        return "12:00 PM - 3:00 PM"
-    if "3:00 PM - 5:00 PM" in order["tags"]:
-        return "3:00 PM - 5:00 PM"
-    if "1:00 PM - 6:00 PM" in order["tags"]:
+    elif "1:00 PM - 6:00 PM" in order["tags"]:
         return "1:00 PM - 6:00 PM"
-    if "5:00 PM - 10:00 PM" in order["tags"]:
+    elif "5:00 PM - 10:00 PM" in order["tags"]:
         return "5:00 PM - 10:00 PM"
-    if "walk in" in order["tags"].lower():
-        return "Walk In"
-    if "pickup" in order["tags"].lower():
-        m = re.search(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm)", order["tags"])
-        if m:
-            hour = int(m.group(1))
-            minute = m.group(2) or "00"
-            ampm = m.group(3).upper()
-            return f"Pickup - {hour}:{minute} {ampm}"
-        return "Pickup"
-    tags = order["tags"]
-    m = re.search(r"\b\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm)\b", tags)
-    if m:
-        return f"Custom - {m.group()}"
+    elif "pickup" in order["tags"].lower() or  "pick up" in order["tags"].lower():
+        return "Pick up"
+    else:
+        # irregular category
+        return "Custom Time"
 
-    return None
-
+# updates addon item information accurately with
+# understanding of the sku name
+# eg. F-Ribbon-Polaroid-FRE50 -> ribbon, polaroid, scent is updated to True
 def update_addons_using_sku(sku, ribbon, music_box, polaroid, scent):
     lowercase_sku = str(sku).lower()
     updated_addon_list = [ribbon, music_box.copy(), polaroid, scent.copy()]
@@ -135,12 +110,14 @@ def update_addons_using_sku(sku, ribbon, music_box, polaroid, scent):
 
     return updated_addon_list
 
+# can use this later to show delivery type
 def get_delivery_type(order, item):
     delivery_type = None
     for prop in item["properties"]:
         if prop["name"] == "Selection":
-            delivery_type = prop["value"]   # "Delivery" or "Pickup"
+            delivery_type = prop["value"]
             break
+    # is a delivery condition needed as well?
     if "pickup" in order["tags"].lower() or "pick up" in order["tags"].lower():
         delivery_type = "Pickup"
     return delivery_type
@@ -172,14 +149,15 @@ def process_orders():
     processed_rows = []
     for order_id, group in df.groupby("order"):
         ribbon = False
-        music_box = [] # can improve by saying specifically what music box
+        music_box = []
         polaroid = False
-        scent = [] # can improve by saying specifically what scent
+        scent = []
         main_sku = None
         qty = None
         delivery_date = None
         delivery_slot = None
         delivery_type = None
+        custom_details = ""
 
         for _, row in group.iterrows():
             sku = row["sku"]
@@ -192,7 +170,7 @@ def process_orders():
             elif is_scent(sku):
                 scent.append(sku)
             else:
-                if main_sku is not None:
+                if main_sku is not None: 
                     main_sku = f"COMPLEX ORDER (>1 main item)"
                     break
                 main_sku = sku
@@ -203,6 +181,7 @@ def process_orders():
 
         if pd.isna(main_sku) or str(main_sku).strip() == "":
             main_sku = "CUSTOM ORDER (Please check details manually)"
+            custom_details = row["product"]
 
         [ribbon, music_box, polaroid, scent] = update_addons_using_sku(main_sku, ribbon, music_box, polaroid, scent)
         
@@ -210,6 +189,7 @@ def process_orders():
         processed_rows.append({
             "Order": order_id,
             "SKU": main_sku,
+            "Custom Details": custom_details,
             "Quantity": qty,
             "Ribbon": ribbon,
             "Music Box": music_box,
