@@ -117,7 +117,8 @@ def get_delivery_type(order, item):
         if prop["name"] == "Selection":
             delivery_type = prop["value"]
             break
-    # is a delivery condition needed as well?
+    if "delivery" in order["tags"].lower():
+            delivery_type = "Delivery"
     if "pickup" in order["tags"].lower() or "pick up" in order["tags"].lower():
         delivery_type = "Pickup"
     return delivery_type
