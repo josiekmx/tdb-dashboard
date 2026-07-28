@@ -1,7 +1,8 @@
 import json
 import os
+from pathlib import Path
 
-FILE_NAME = "../data/completed_orders.json"
+FILE_NAME = Path(__file__).parent.parent / "data" / "completed_orders.json"
 
 
 def load_completed_orders():
