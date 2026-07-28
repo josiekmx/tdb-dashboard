@@ -24,8 +24,10 @@ if st.button("Refresh"):
     # Reset filters
     st.session_state.selected_date = None
     st.session_state.selected_slots = []
-
     st.rerun()
+
+# insert empty space to optimise ui
+st.markdown("<br>", unsafe_allow_html=True)
 
 # order details table
 filtered_table_data = display_order_details_table()
