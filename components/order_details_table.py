@@ -1,6 +1,5 @@
 import streamlit as st
 from order_processor import process_orders
-from components.completion_store import set_completed
 
 def display_order_details_table():
     df = process_orders()
@@ -73,16 +72,6 @@ def display_order_details_table():
             if col != "Completed"
         ]
     )
-
-    for _, row in edited_df.iterrows():
-        order_id = row["Order"]
-        completed = row["Completed"]
-
-        if completed != filtered.loc[
-            filtered["Order"] == order_id,
-            "Completed"
-        ].iloc[0]:
-            set_completed(order_id, completed)
 
     # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)
