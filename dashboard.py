@@ -18,6 +18,8 @@ st.set_page_config(
 st.header("The Daily Blooms Dashboard 🌸")
 
 # enables refresh
+# upon refresh, the date and timeslots will return to 
+# default state of the earliest date and all timeslots respectively. 
 if st.button("Refresh"):
     # Reset filters
     st.session_state.selected_date = None
