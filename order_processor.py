@@ -224,6 +224,9 @@ def process_orders():
         .map(lambda x: completed_orders.get(x, False))
     )
 
+    st.write(sorted_processed_df.columns)
+    st.dataframe(sorted_processed_df)
+
     return  sorted_processed_df
 
 
