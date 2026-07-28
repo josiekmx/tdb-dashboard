@@ -24,7 +24,7 @@ def display_order_summary_tables(filtered):
         )
 
     with col2:
-        st.markdown("### Pickups")
+        st.markdown("### Pickupss")
         st.metric("Total Orders", len(pickup_orders))
 
         pickup_summary = (
