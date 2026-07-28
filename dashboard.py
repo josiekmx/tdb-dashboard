@@ -18,7 +18,7 @@ st.set_page_config(
 col1, col2 = st.columns([0.08, 0.92])
 
 with col1:
-    st.image("assets/flower_logo.png", width=120)
+    st.image("assets/flower_logo.png", width=80)
 
 with col2:
     st.header("The Daily Blooms Dashboard")
