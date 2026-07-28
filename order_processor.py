@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import os 
 import streamlit as st
+from completion_store import cleanup_completed_orders
 
 # definining add-on products
 MUSIC_BOX_SKUS = {
@@ -212,6 +213,16 @@ def process_orders():
     # sort orders
     sorted_processed_df = current_orders_df.sort_values(by=["Delivery Date", "Delivery Slot", "SKU"])
     sorted_processed_df.to_csv("sorted_processed_df.csv", index=False)
+
+    # included completed status columns
+    completed_orders = cleanup_completed_orders(
+        sorted_processed_df["Order"].tolist()
+    )
+
+    sorted_processed_df["Completed"] = (
+        sorted_processed_df["Order"]
+        .map(lambda x: completed_orders.get(x, False))
+    )
 
     return  sorted_processed_df
 

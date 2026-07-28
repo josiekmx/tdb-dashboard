@@ -1,5 +1,6 @@
 import streamlit as st
 from order_processor import process_orders
+from completion_store import set_completed
 
 def display_order_details_table():
     df = process_orders()
@@ -57,12 +58,31 @@ def display_order_details_table():
     max_height = 700
     height = min(header_height + len(display_df) * row_height, max_height)
 
-    st.dataframe(
+    edited_df = st.data_editor(
         display_df,
         use_container_width=True,
         height=height,
         hide_index=True,
+        column_config={
+            "Completed": st.column_config.CheckboxColumn(
+                "Completed"
+            )
+        },
+        disabled=[
+            col for col in display_df.columns
+            if col != "Completed"
+        ]
     )
+
+    for _, row in edited_df.iterrows():
+        order_id = row["Order"]
+        completed = row["Completed"]
+
+        if completed != filtered.loc[
+            filtered["Order"] == order_id,
+            "Completed"
+        ].iloc[0]:
+            set_completed(order_id, completed)
 
     # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)
