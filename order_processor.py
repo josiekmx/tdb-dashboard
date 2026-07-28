@@ -5,7 +5,7 @@ from datetime import datetime
 import json
 import os 
 import streamlit as st
-from completion_store import cleanup_completed_orders
+from components.completion_store import cleanup_completed_orders
 
 # definining add-on products
 MUSIC_BOX_SKUS = {
