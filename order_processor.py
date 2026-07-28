@@ -5,7 +5,6 @@ from datetime import datetime
 import json
 import os 
 import streamlit as st
-from services.google_sheet import sync_orders, load_assignments
 
 # definining add-on products
 MUSIC_BOX_SKUS = {
@@ -128,21 +127,6 @@ def get_delivery_type(order, item):
 def process_orders():
     orders = get_orders()
 
-    # inspect orders
-    # st.json(orders[0:20]) 
-    # order_number = "#TDB91267"
-
-    # matching_order = next(
-    #     (order for order in orders if order["name"] == order_number),
-    #     None
-    # )
-
-    # if matching_order:
-    #     st.json(matching_order)
-    # else:
-    #     st.error(f"Order {order_number} not found.")
-
-
     # looping through json of retrieved orders
     # and extracting the necessary order details
     rows = []
@@ -187,7 +171,7 @@ def process_orders():
                 scent.append(sku)
             else:
                 if main_sku is not None: 
-                    main_sku = f"COMPLEX ORDER (>1 main item)" # mb here can add order description
+                    main_sku = f"COMPLEX ORDER (>1 main item)"
                     break
                 main_sku = sku
                 qty = row["qty"]
@@ -196,7 +180,7 @@ def process_orders():
                 delivery_type = row["delivery_type"]
 
         if pd.isna(main_sku) or str(main_sku).strip() == "":
-            main_sku = "CUSTOM ORDER (Please check details manually)" # mb here can add order description
+            main_sku = "CUSTOM ORDER (Please check details manually)"
             custom_details = row["product"]
 
         [ribbon, music_box, polaroid, scent] = update_addons_using_sku(main_sku, ribbon, music_box, polaroid, scent)

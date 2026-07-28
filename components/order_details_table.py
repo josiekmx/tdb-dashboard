@@ -1,9 +1,7 @@
 import streamlit as st
 from order_processor import process_orders
-from services.google_sheet import save_assignments
 
 def display_order_details_table():
-    # retrieves orders from shopify
     df = process_orders()
 
     # display drop down menu to select date
