@@ -8,7 +8,7 @@ def check_password():
         return True
     
     # else login page is displayed
-    st.title("🌸 The Daily Blooms Dashboard")
+    st.title("The Daily Blooms Dashboard")
     password = st.text_input(
         "Password",
         type="password"

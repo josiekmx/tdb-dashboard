@@ -10,16 +10,11 @@ if not check_password():
 # set windows tab
 st.set_page_config(
     page_title="The Daily Blooms Dashboard",
-    page_icon="assets/flower_logo1.png",
     layout="wide"
 )
 
 # dashboard header
-col1, col2 = st.columns([0.08, 0.92])
-with col1:
-    st.image("assets/flower_logo1.png", width=60)
-with col2:
-    st.header("The Daily Blooms Dashboard")
+st.header("The Daily Blooms Dashboard")
 
 # enables refresh
 # upon refresh, the date and timeslots will return to 
