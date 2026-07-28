@@ -1,6 +1,6 @@
 import streamlit as st
 from order_processor import process_orders
-from completion_store import set_completed
+from components.completion_store import set_completed
 
 def display_order_details_table():
     df = process_orders()
