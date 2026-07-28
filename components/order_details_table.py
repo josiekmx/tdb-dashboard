@@ -7,13 +7,15 @@ def display_order_details_table():
 
     # display drop down menu to select date and delivery/pickup slot
     dates = sorted(df["Delivery Date"].dropna().unique())
+    
+    # If no date has been selected yet, default to the first date
+    if not st.session_state.get("selected_date"):
+        st.session_state.selected_date = dates[0]
 
     selected_date = st.selectbox(
         "Delivery Date",
-        dates,
-        index=0 if st.session_state.get("selected_date") is None
-            else dates.index(st.session_state.selected_date), # for refresh button 
-        key="selected_date"
+        options=dates,
+        key="selected_date",
     )
 
     slots = sorted(df["Delivery Slot"].dropna().unique())
