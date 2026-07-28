@@ -15,13 +15,7 @@ st.set_page_config(
 )
 
 # dashboard header
-col1, col2 = st.columns([0.08, 0.92])
-
-with col1:
-    st.image("assets/flower_logo.png", width=80)
-
-with col2:
-    st.header("The Daily Blooms Dashboard")
+st.header("The Daily Blooms Dashboard")
 
 # enables refresh
 # upon refresh, the date and timeslots will return to 
