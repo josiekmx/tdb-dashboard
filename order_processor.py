@@ -82,7 +82,7 @@ def get_delivery_slot(order, item):
         return "1:00 PM - 6:00 PM"
     elif "5:00 PM - 10:00 PM" in order["tags"]:
         return "5:00 PM - 10:00 PM"
-    elif "pickup" in order["tags"].lower() or  "pick up" in order["tags"].lower():
+    elif "pickup" in order["tags"].lower() or "pick up" in order["tags"].lower():
         return "Pick up"
     else:
         # irregular category
@@ -110,7 +110,6 @@ def update_addons_using_sku(sku, ribbon, music_box, polaroid, scent):
 
     return updated_addon_list
 
-# can use this later to show delivery type
 def get_delivery_type(order, item):
     delivery_type = None
     for prop in item["properties"]:
@@ -146,7 +145,7 @@ def process_orders():
 
     df = pd.DataFrame(rows)
 
-    # merge add-ons with main orders
+    # merge add-ons order items with main orders
     processed_rows = []
     for order_id, group in df.groupby("order"):
         ribbon = False
@@ -171,6 +170,8 @@ def process_orders():
             elif is_scent(sku):
                 scent.append(sku)
             else:
+                # indicates that there is another main item order
+                # belonging to the same order/customer
                 if main_sku is not None: 
                     main_sku = f"COMPLEX ORDER (>1 main item)"
                     break
@@ -180,9 +181,10 @@ def process_orders():
                 delivery_slot = row["delivery_slot"]
                 delivery_type = row["delivery_type"]
 
+        # catches custom orders where sku is None
         if pd.isna(main_sku) or str(main_sku).strip() == "":
             main_sku = "CUSTOM ORDER (Please check details manually)"
-            custom_details = row["product"]
+            custom_details = row["product"] 
 
         [ribbon, music_box, polaroid, scent] = update_addons_using_sku(main_sku, ribbon, music_box, polaroid, scent)
         
@@ -205,13 +207,11 @@ def process_orders():
 
     # only keep relevant orders from today onwards
     today = pd.Timestamp.now(tz="Asia/Singapore").date()
-    processed_df["Delivery Date"] = pd.to_datetime(
-    processed_df["Delivery Date"], errors="coerce").dt.date
+    processed_df["Delivery Date"] = pd.to_datetime(processed_df["Delivery Date"], errors="coerce").dt.date
     current_orders_df = processed_df[processed_df["Delivery Date"] >= today]
 
     # sort orders
     sorted_processed_df = current_orders_df.sort_values(by=["Delivery Date", "Delivery Slot", "SKU"])
-    sorted_processed_df.to_csv("sorted_processed_df.csv", index=False)
 
     return  sorted_processed_df
 
