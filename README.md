@@ -1,27 +1,32 @@
-# 🌸 The Daily Blooms Dashboard
+# The Daily Blooms Dashboard
 
 A Streamlit dashboard that automates the processing of Shopify orders for The Daily Blooms.
 
-Instead of manually exporting Shopify orders into Excel and sorting them at each delivery time slot, this dashboard retrieves open orders directly from the Shopify Admin API, processes them into a florist-friendly format, and provides order summaries for bouquet preparation.
+Instead of manually exporting Shopify orders into Excel and sorting them at each delivery time slot, this dashboard retrieves open orders directly from the Shopify Admin API, processes them into a reader friendly format, and provides order summaries for bouquet preparation.
 
 ---
 
 ## Features
 
-- Retrieves the latest open Shopify orders
-- Extracts delivery date and delivery time slot
-- Identifies:
-  - Ribbon add-ons
-  - Music box add-ons
-  - Polaroid add-ons
-  - Scent add-ons
-- Detects custom and complex orders
-- Groups add-on products with their corresponding bouquet
-- Automatically sorts orders by:
+- Retrieves the latest 250 open Shopify orders
+- Extracts and displays key order information:
+  - Order ID
+  - SKU
+  - Custom Order Details
+  - Quanitity 
+  - Ribbon Add-ons
+  - Music Boxes Add-ons
+  - Polaroid Add-ons
+  - Scents Add-ons 
+  - Delivery Time Slot
+  - Delivery Type 
+- Filters orders by Date and Timeslot
+- Sorts orders by:
   - Delivery slot
   - SKU
-- Generates SKU summary tables
+- Generates Delivery and Pickup Sumamry Tables
 - Password protected using Streamlit authentication
+- Enables refresh to update dashboard order details with the latest orders
 
 ---
 
@@ -39,12 +44,11 @@ TDB_ORDER_DASHBOARD
 │   ├── order_details_table.py
 │   └── order_summary_tables.py
 │
-├── services/
-│
-├── debug/
-│
 ├── .streamlit/
 │   └── config.toml
+│
+├── assets/
+│   └── flower_logo.png
 │
 ├── requirements.txt
 └── README.md
@@ -61,23 +65,11 @@ Entry point of the application.
 Responsibilities:
 
 - Sets page configuration
-- Authenticates user
-- Displays dashboard title
-- Displays:
+- Displays dashboard components:
+  - Login Page
+  - Refresh Button
   - Order details table
   - Summary tables
-
-Execution flow:
-
-```
-Authenticate User
-        ↓
-Process Shopify Orders
-        ↓
-Display Order Table
-        ↓
-Display Summary Tables
-```
 
 ---
 
@@ -85,170 +77,135 @@ Display Summary Tables
 
 Responsible for communicating with the Shopify Admin API.
 
-Main function:
+#### Functions: 
 
-```python
-get_orders()
-```
+1. get_orders()
 
-Retrieves the latest open Shopify orders.
-
-Current implementation:
-
-- Uses Shopify REST Admin API
-- Retrieves a maximum of **250 open orders**
-
-```
-Shopify
-    ↓
-REST API Request
-    ↓
-JSON Response
-```
-
-**Note**
-
-Shopify limits each API request to 250 records.
-
-If the shop ever exceeds 250 open orders simultaneously, pagination should be implemented.
+   Retrieves orders from shopify database and returns the latest 250 open orders created in json format. Note that it can only retrieve a **maximum of 250 open orders**.
 
 ---
 
 ## order_processor.py
 
-Core processing logic of the application.
+Processes raw Shopify order data into a structured dataframe for display in the dashboard.
 
-Converts raw Shopify JSON into the dashboard dataframe.
+Its responsibilities include:
+- Extracting relevant information from raw Shopify orders.
+- Merging add-on products (e.g. ribbons, music boxes, scents) with their corresponding main product.
+- Detecting complex or custom orders that require manual review.
+- Filtering out past orders.
+- Returning a sorted DataFrame ready for the Streamlit frontend.
 
-Major responsibilities:
+#### Helper Functions
 
-### 1. Parse Shopify JSON
+| Function | Description |
+|----------|-------------|
+| `is_ribbon(sku)` | Returns whether the SKU represents a ribbon add-on. |
+| `is_music_box(sku)` | Returns whether the SKU is a recognised music box add-on. |
+| `is_polaroid(sku)` | Returns whether the SKU represents a polaroid add-on. |
+| `is_scent(sku)` | Returns whether the SKU is a recognised scent add-on. |
+| `get_delivery_date(order, item)` | Extracts the delivery date from Shopify line item properties or order tags. Handles date-change orders and multiple date formats. |
+| `standardise_date(date_str)` | Converts supported date formats into the standard `YYYY-MM-DD` format. |
+| `get_delivery_slot(order, item)` | Determines the delivery timeslot or pickup request based on Shopify order tags. |
+| `update_addons_using_sku(...)` | Detects add-ons embedded within the main product SKU (e.g. `F-Ribbon-Polaroid-FRE50`) and updates the corresponding add-on fields. |
+| `get_delivery_type(order, item)` | Determines whether the order is a delivery or pickup using both line item properties and order tags. |
 
-Extracts:
+#### Functions
 
-- Order number
-- SKU
-- Product
-- Quantity
-- Delivery date
-- Delivery slot
-- Delivery type
+1. `process_orders()`
 
----
+Retrieves raw Shopify orders and converts them into a dashboard ready DataFrame.
 
-### 2. Detect add-ons
+The function performs the following steps:
 
-Recognises add-on products such as:
+        1. Retrieves the latest open orders from Shopify.
+        2. Extracts relevant information from every line item.
+        3. Groups line items belonging to the same customer order.
+        4. Merges add-on products into their corresponding main order.
+        5. Detects:
+           - Complex orders containing multiple main products.
+           - Custom orders without a SKU, then attaching custom order details
+        6. Standardises delivery dates.
+        7. Filters out orders with delivery dates before today.
+        8. Sorts remaining orders by:
+           - Delivery Date
+           - Delivery Slot
+           - SKU
+        9. Returns the processed DataFrame.
 
-- Ribbon
-- Music Box
-- Polaroid
-- Scent
-
-These are merged into their corresponding bouquet order.
-
----
-
-### 3. Handle custom orders
-
-Orders with:
-
-- missing SKU
-- multiple bouquet SKUs
-
-are labelled as:
-
-```
-CUSTOM ORDER
-```
-
-or
-
-```
-COMPLEX ORDER
-```
-
-to alert staff that manual review is required.
-
----
-
-### 4. Clean data
-
-Includes helper functions to:
-
-- standardise delivery dates
-- determine delivery slot
-- determine delivery type
-
----
-
-### 5. Produce dashboard dataframe
-
-Final dataframe contains fields such as:
-
-| Column |
-|----------|
-| Order |
-| SKU |
-| Quantity |
-| Ribbon |
-| Music Box |
-| Polaroid |
-| Scent |
-| Delivery Slot |
-| Delivery Date |
-| Delivery Type |
-| Custom Details |
+#### Notes
+- Orders containing more than one main product are labelled as **`COMPLEX ORDER (>1 main item)`** for manual review.
+- Orders without a SKU are labelled as **`CUSTOM ORDER (Please check details manually)`**.
+- Only orders with delivery dates from the current day onwards are returned.
 
 ---
 
 ## components/authentication.py
 
-Simple password authentication.
+Checks whether user is password aunthenticated. Otherwise, user is directed to the login page.
 
-Uses:
+#### Functions: 
 
-```
-st.secrets["APP_PASSWORD"]
-```
+1. check_password()
 
-to restrict dashboard access.
+   Uses ```st.secrets["APP_PASSWORD"]```to restrict dashboard access.
 
 ---
 
-## components/order_details_table.py
+## `components/order_details_table.py`
 
-Displays the main dashboard table.
+Displays the main order details table within the Streamlit dashboard.
 
-Responsibilities:
+#### Functions
 
-- Delivery date selector
-- Time slot selector
-- Sort orders
-- Display processed dataframe
+### 1. `display_order_details_table()`
+1. Retrieves processed order data using `process_orders()`.
+2. Displays a dropdown menu allowing the user to select a delivery date.
+3. Displays a multi-select widget allowing one or more delivery slots to be selected.
+4. Filters orders according to the selected date and delivery slot(s).
+5. Sorts the filtered orders by:
+   - Delivery Slot
+   - SKU
+6. Dynamically calculates the table height based on the number of displayed rows (up to a maximum height).
+7. Displays the filtered orders using Streamlit's `st.data_editor()` in a read-only format.
+8. Returns the filtered DataFrame for use by downstream dashboard components (e.g. summary tables).
 
-Orders are sorted by:
+#### Notes
 
-1. Delivery Slot
-2. SKU
+- The first available delivery date is automatically selected when the dashboard loads.
+- All available delivery slots are selected by default.
+- The filtered DataFrame is returned so it can be reused by other dashboard components without repeating the filtering logic.
 
 ---
 
 ## components/order_summary_tables.py
 
-Creates summary tables used by florists.
+Displays summary tables for delivery and pickup orders.
 
-Examples:
+This module is responsible for:
+- Separating filtered orders into deliveries and pickups.
+- Displaying the total number of delivery and pickup orders.
+- Summarising the number of orders for each SKU.
 
-- SKU counts
-- Delivery totals
-- Pickup totals
+#### Functions
 
-These provide a quick overview of the number of bouquets required for each SKU.
+### 1. `display_order_summary_tables(filtered)`
+
+Displays summary statistics for the currently filtered orders.
+
+The function performs the following steps:
+
+1. Separates the filtered orders into:
+   - Delivery orders.
+   - Pickup orders.
+2. Calculates the total number of delivery orders and displays the result as a metric.
+3. Groups delivery orders by SKU and counts the number of occurrences of each SKU.
+4. Displays the delivery summary table.
+5. Repeats the same process for pickup orders.
 
 ---
 
-# Processing Pipeline
+# Processing Data Pipeline
 
 ```
 Shopify Orders
@@ -269,7 +226,7 @@ Processed DataFrame
 order_details_table.py
         │
         ▼
-Summary Tables
+order_summary_table.py
         │
         ▼
 Dashboard
@@ -292,52 +249,3 @@ APP_PASSWORD=
 Do **not** commit these values into GitHub.
 
 ---
-
-# Running the Dashboard
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run locally:
-
-```bash
-streamlit run dashboard.py
-```
-
----
-
-# Dependencies
-
-Main libraries:
-
-- streamlit
-- pandas
-- requests
-
-See `requirements.txt` for the full list.
-
----
-
-# Future Improvements
-
-Potential future enhancements include:
-
-- Shopify pagination (retrieve >250 open orders)
-- Live auto-refresh
-- Google Sheets integration for staff assignment
-- Order completion tracking
-- Automatic colour-coding by delivery slot
-- Better handling of complex custom orders
-- Search by order number
-- Export filtered orders to CSV
-
----
-
-# Author
-
-Developed by Janna Leong
-
-For The Daily Blooms
