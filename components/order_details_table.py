@@ -57,11 +57,20 @@ def display_order_details_table():
     max_height = 700
     height = min(header_height + len(display_df) * row_height, max_height)
 
-    st.dataframe(
+    edited_df = st.data_editor(
         display_df,
         use_container_width=True,
         height=height,
         hide_index=True,
+        column_config={
+            "Completed": st.column_config.CheckboxColumn(
+                "Completed"
+            )
+        },
+        disabled=[
+            col for col in display_df.columns
+            if col != "Completed"
+        ]
     )
 
     # insert empty space to optimise ui

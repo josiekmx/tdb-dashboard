@@ -10,12 +10,12 @@ if not check_password():
 # set windows tab
 st.set_page_config(
     page_title="The Daily Blooms Dashboard",
-    page_icon="🌸",
+    page_icon="assets/flower_logo.png",
     layout="wide"
 )
 
 # dashboard header
-st.header("The Daily Blooms Dashboard 🌸")
+st.header("The Daily Blooms Dashboard")
 
 # enables refresh
 # upon refresh, the date and timeslots will return to 
@@ -24,8 +24,10 @@ if st.button("Refresh"):
     # Reset filters
     st.session_state.selected_date = None
     st.session_state.selected_slots = []
-
     st.rerun()
+
+# insert empty space to optimise ui
+st.markdown("<br>", unsafe_allow_html=True)
 
 # order details table
 filtered_table_data = display_order_details_table()
