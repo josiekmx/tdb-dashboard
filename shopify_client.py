@@ -48,7 +48,20 @@ def update_order_completed(shopify_id, completed):
     response.raise_for_status()
 
     order = response.json()["order"]
+    tags = [tag.strip() for tag in order["tags"].split(",") if tag.strip()]
 
-    st.write(order["tags"])
+    # st.write(order["tags"])
+
+    COMPLETED_TAG = "tdb_completed"
+    if completed:
+        if COMPLETED_TAG not in tags:
+            tags.append(COMPLETED_TAG)
+    else:
+        tags = [tag for tag in tags if tag != COMPLETED_TAG]
+
+    updated_tags = ", ".join(tags)
+
+    st.write("Old:", order["tags"])
+    st.write("New:", updated_tags)
 
     return False
