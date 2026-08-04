@@ -49,6 +49,6 @@ def update_order_completed(shopify_id, completed):
 
     order = response.json()["order"]
 
-    print(order["tags"])
+    st.write(order["tags"])
 
     return False
