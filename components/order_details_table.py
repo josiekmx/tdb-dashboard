@@ -73,6 +73,25 @@ def display_order_details_table():
         ]
     )
 
+    updated = False
+
+    for _, row in edited_df.iterrows():
+
+        shopify_id = row["Shopify ID"]
+
+        original_completed = filtered.loc[
+            filtered["Shopify ID"] == shopify_id,
+            "Completed"
+        ].iloc[0]
+
+        if row["Completed"] != original_completed:
+
+            st.write(f"{shopify_id} changed!")
+
+            updated = True
+    if updated:
+        st.write("Need to update Shopify")
+
     # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)
 
