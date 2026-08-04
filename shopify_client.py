@@ -64,4 +64,19 @@ def update_order_completed(shopify_id, completed):
     st.write("Old:", order["tags"])
     st.write("New:", updated_tags)
 
-    return False
+    payload = {
+        "order": {
+            "id": shopify_id,
+            "tags": updated_tags
+        }
+    }
+
+    response = requests.put(
+        url,
+        headers=headers,
+        json=payload
+    )
+
+    response.raise_for_status()
+
+    return True

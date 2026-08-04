@@ -93,7 +93,7 @@ def display_order_details_table():
 
             updated = updated or changed
     if updated:
-        st.write("Need to update Shopify")
+        st.rerun()
 
     # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)
