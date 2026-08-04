@@ -1,5 +1,6 @@
 import streamlit as st
 from order_processor import process_orders
+from shopify_client import update_order_completed
 
 def display_order_details_table():
     df = process_orders()
@@ -85,10 +86,12 @@ def display_order_details_table():
         ].iloc[0]
 
         if row["Completed"] != original_completed:
+            changed = update_order_completed(
+                shopify_id,
+                row["Completed"]
+            )
 
-            st.write(f"{shopify_id} changed!")
-
-            updated = True
+            updated = updated or changed
     if updated:
         st.write("Need to update Shopify")
 
