@@ -61,9 +61,6 @@ def update_order_completed(shopify_id, completed):
 
     updated_tags = ", ".join(tags)
 
-    st.write("Old:", order["tags"])
-    st.write("New:", updated_tags)
-
     payload = {
         "order": {
             "id": shopify_id,
