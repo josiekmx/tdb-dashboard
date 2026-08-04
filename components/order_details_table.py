@@ -50,6 +50,7 @@ def display_order_details_table():
     )
     filtered = filtered.drop(columns=["Slot Order"])
     display_df = filtered.drop(columns=['Delivery Date'])
+    display_df = display_df.drop(columns=["Shopify ID"])
 
 
     # optimise table size
