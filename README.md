@@ -246,6 +246,8 @@ TOKEN=
 APP_PASSWORD=
 ```
 
-Do **not** commit these values into GitHub.
+Do **not** commit these values into GitHub. In the case of accidental commits, rotate api keys.
+
+
 
 ---
