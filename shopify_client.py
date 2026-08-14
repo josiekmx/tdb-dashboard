@@ -31,3 +31,53 @@ def get_orders(limit=250):
     response.raise_for_status()
 
     return response.json()["orders"]
+
+
+def update_order_completed(shopify_id, completed):
+    url = f"https://{SHOP}/admin/api/2026-01/orders/{shopify_id}.json"
+
+    headers = {
+        "X-Shopify-Access-Token": TOKEN,
+        "Content-Type": "application/json"
+    }
+
+    # retrieve updated order data for a specific order 
+    # based on the given shopify id
+    response = requests.get(
+        url,
+        headers=headers
+    )
+    response.raise_for_status()
+
+    order = response.json()["order"]
+    tags = [tag.strip() for tag in order["tags"].split(",") if tag.strip()]
+
+    # if order is to be marked as completed,
+    # attach a completed tag to the order
+    # otherwise, remove any existing completed tag from the order
+    COMPLETED_TAG = "tdb_completed"
+    if completed:
+        if COMPLETED_TAG not in tags:
+            tags.append(COMPLETED_TAG)
+    else:
+        tags = [tag for tag in tags if tag != COMPLETED_TAG]
+
+    updated_tags = ", ".join(tags)
+
+    payload = {
+        "order": {
+            "id": shopify_id,
+            "tags": updated_tags
+        }
+    }
+
+    # update specific order with new updated tag list
+    response = requests.put(
+        url,
+        headers=headers,
+        json=payload
+    )
+
+    response.raise_for_status()
+
+    return True

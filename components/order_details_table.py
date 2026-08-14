@@ -1,5 +1,6 @@
 import streamlit as st
 from order_processor import process_orders
+from shopify_client import update_order_completed
 
 def display_order_details_table():
     df = process_orders()
@@ -44,8 +45,8 @@ def display_order_details_table():
     }
     filtered["Slot Order"] = filtered["Delivery Slot"].map(slot_order).fillna(999)
     filtered = filtered.sort_values(
-        by=["Slot Order", "SKU"],
-        ascending=[True, True]
+        by=["Slot Order", "Completed", "SKU"],
+        ascending=[True, True, True]
     )
     filtered = filtered.drop(columns=["Slot Order"])
     display_df = filtered.drop(columns=['Delivery Date'])
@@ -63,6 +64,7 @@ def display_order_details_table():
         height=height,
         hide_index=True,
         column_config={
+            "Shopify ID": None,
             "Completed": st.column_config.CheckboxColumn(
                 "Completed"
             )
@@ -72,6 +74,30 @@ def display_order_details_table():
             if col != "Completed"
         ]
     )
+
+    updated = False
+
+    # if the completed status of an order is edited by the user,
+    # update shopify backend accordingly
+    for _, row in edited_df.iterrows():
+
+        shopify_id = row["Shopify ID"]
+
+        original_completed = filtered.loc[
+            filtered["Shopify ID"] == shopify_id,
+            "Completed"
+        ].iloc[0]
+
+        if row["Completed"] != original_completed:
+            changed = update_order_completed(
+                shopify_id,
+                row["Completed"]
+            )
+
+            updated = updated or changed
+    # rerun so dashbaord reflects the most updated information
+    if updated:
+        st.rerun()
 
     # insert empty space to optimise ui
     st.markdown("<br>", unsafe_allow_html=True)

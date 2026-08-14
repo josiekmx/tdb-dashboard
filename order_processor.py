@@ -133,6 +133,7 @@ def process_orders():
     for order in orders:
         for item in order["line_items"]:
             rows.append({
+                "shopify_id": order["id"],
                 "order": order["name"],
                 "tags": order["tags"],
                 "sku": item["sku"],
@@ -140,7 +141,8 @@ def process_orders():
                 "qty": item["quantity"],
                 "delivery_date": standardise_date(get_delivery_date(order, item)),
                 "delivery_slot": get_delivery_slot(order, item),
-                "delivery_type": get_delivery_type(order, item)
+                "delivery_type": get_delivery_type(order, item),
+                "completed": "tdb_completed" in order["tags"]
             })
 
     df = pd.DataFrame(rows)
@@ -158,6 +160,8 @@ def process_orders():
         delivery_slot = None
         delivery_type = None
         custom_details = ""
+        shopify_id = None
+        completed = False
 
         for _, row in group.iterrows():
             sku = row["sku"]
@@ -180,6 +184,8 @@ def process_orders():
                 delivery_date = row["delivery_date"]
                 delivery_slot = row["delivery_slot"]
                 delivery_type = row["delivery_type"]
+                shopify_id = row["shopify_id"]
+                completed = row["completed"]
 
         # catches custom orders where sku is None
         if pd.isna(main_sku) or str(main_sku).strip() == "":
@@ -190,6 +196,7 @@ def process_orders():
         
 
         processed_rows.append({
+            "Shopify ID": shopify_id,
             "Order": order_id,
             "SKU": main_sku,
             "Custom Details": custom_details,
@@ -200,7 +207,8 @@ def process_orders():
             "Scent": scent,
             "Delivery Slot": delivery_slot,
             "Delivery Date": delivery_date,
-            "Delivery Type": delivery_type
+            "Delivery Type": delivery_type,
+            "Completed": completed
         })
 
     processed_df = pd.DataFrame(processed_rows)

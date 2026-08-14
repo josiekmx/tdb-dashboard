@@ -19,14 +19,17 @@ Instead of manually exporting Shopify orders into Excel and sorting them at each
   - Polaroid Add-ons
   - Scents Add-ons 
   - Delivery Time Slot
-  - Delivery Type 
-- Filters orders by Date and Timeslot
+  - Delivery Type
+  - Completion Status 
+- Filters orders by date and timeslot
 - Sorts orders by:
-  - Delivery slot
-  - SKU
-- Generates Delivery and Pickup Sumamry Tables
+  1. Delivery slot
+  2. Completion status (Completed items at the bottom)
+  3. SKU
+- Generates Delivery and Pickup Summary Tables
 - Password protected using Streamlit authentication
 - Enables refresh to update dashboard order details with the latest orders
+- Orders can be marked and unmarked as completed
 
 ---
 
@@ -63,7 +66,6 @@ TDB_ORDER_DASHBOARD
 Entry point of the application.
 
 Responsibilities:
-
 - Sets page configuration
 - Displays dashboard components:
   - Login Page
@@ -83,13 +85,17 @@ Responsible for communicating with the Shopify Admin API.
 
    Retrieves orders from shopify database and returns the latest 250 open orders created in json format. Note that it can only retrieve a **maximum of 250 open orders**.
 
+2. update_order_completed()
+
+   Updates the completion status of a specific order in Shopify by adding or removing the tdb_completed tag. When completed is True, the function adds the tag to the order if it is not already present. When completed is False, it removes the tag if it exists. The function first retrieves the order's current tags to ensure that existing tags are preserved, then sends the updated tag list to the Shopify Admin API.
+
 ---
 
 ## order_processor.py
 
 Processes raw Shopify order data into a structured dataframe for display in the dashboard.
 
-Its responsibilities include:
+Responsibilities:
 - Extracting relevant information from raw Shopify orders.
 - Merging add-on products (e.g. ribbons, music boxes, scents) with their corresponding main product.
 - Detecting complex or custom orders that require manual review.
@@ -112,25 +118,25 @@ Its responsibilities include:
 
 #### Functions
 
-1. `process_orders()`
+1. process_orders()
 
-Retrieves raw Shopify orders and converts them into a dashboard ready DataFrame.
+   Retrieves raw Shopify orders and converts them into a dashboard ready DataFrame.
 
-The function performs the following steps:
+   The function performs the following steps:
 
         1. Retrieves the latest open orders from Shopify.
         2. Extracts relevant information from every line item.
         3. Groups line items belonging to the same customer order.
         4. Merges add-on products into their corresponding main order.
         5. Detects:
-           - Complex orders containing multiple main products.
-           - Custom orders without a SKU, then attaching custom order details
+        - Complex orders containing multiple main products.
+        - Custom orders without a SKU, then attaching custom order details
         6. Standardises delivery dates.
         7. Filters out orders with delivery dates before today.
         8. Sorts remaining orders by:
-           - Delivery Date
-           - Delivery Slot
-           - SKU
+        - Delivery Date
+        - Delivery Slot
+        - SKU
         9. Returns the processed DataFrame.
 
 #### Notes
@@ -152,23 +158,25 @@ Checks whether user is password aunthenticated. Otherwise, user is directed to t
 
 ---
 
-## `components/order_details_table.py`
+## components/order_details_table.py
 
 Displays the main order details table within the Streamlit dashboard.
 
 #### Functions
 
-### 1. `display_order_details_table()`
-1. Retrieves processed order data using `process_orders()`.
-2. Displays a dropdown menu allowing the user to select a delivery date.
-3. Displays a multi-select widget allowing one or more delivery slots to be selected.
-4. Filters orders according to the selected date and delivery slot(s).
-5. Sorts the filtered orders by:
-   - Delivery Slot
-   - SKU
-6. Dynamically calculates the table height based on the number of displayed rows (up to a maximum height).
-7. Displays the filtered orders using Streamlit's `st.data_editor()` in a read-only format.
-8. Returns the filtered DataFrame for use by downstream dashboard components (e.g. summary tables).
+1. display_order_details_table()
+        
+        1. Retrieves processed order data using `process_orders()`.
+        2. Displays a dropdown menu allowing the user to select a delivery date.
+        3. Displays a multi-select widget allowing one or more delivery slots to be selected.
+        4. Filters orders according to the selected date and delivery slot(s).
+        5. Sorts the filtered orders by:
+        - Delivery Slot
+        - Completed Status
+        - SKU
+        6. Dynamically calculates the table height based on the number of displayed rows (up to a maximum height).
+        7. Displays the filtered orders using Streamlit's `st.data_editor()` where all columns are in read only format except the completed status column.
+        8. Returns the filtered DataFrame for use by downstream dashboard components (e.g. summary tables).
 
 #### Notes
 
@@ -189,19 +197,19 @@ This module is responsible for:
 
 #### Functions
 
-### 1. `display_order_summary_tables(filtered)`
+1. display_order_summary_tables()
 
-Displays summary statistics for the currently filtered orders.
+   Displays summary statistics for the currently filtered orders.
 
-The function performs the following steps:
+   The function performs the following steps:
 
-1. Separates the filtered orders into:
-   - Delivery orders.
-   - Pickup orders.
-2. Calculates the total number of delivery orders and displays the result as a metric.
-3. Groups delivery orders by SKU and counts the number of occurrences of each SKU.
-4. Displays the delivery summary table.
-5. Repeats the same process for pickup orders.
+        1. Separates the filtered orders into:
+        - Delivery orders.
+        - Pickup orders.
+        2. Calculates the total number of delivery orders and displays the result as a metric.
+        3. Groups delivery orders by SKU and counts the number of occurrences of each SKU.
+        4. Displays the delivery summary table.
+        5. Repeats the same process for pickup orders.
 
 ---
 
@@ -246,6 +254,8 @@ TOKEN=
 APP_PASSWORD=
 ```
 
-Do **not** commit these values into GitHub.
+Do **not** commit these values into GitHub. In the case of accidental commits, rotate api keys.
+
+
 
 ---
