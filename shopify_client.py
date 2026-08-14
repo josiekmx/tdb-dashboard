@@ -41,6 +41,8 @@ def update_order_completed(shopify_id, completed):
         "Content-Type": "application/json"
     }
 
+    # retrieve updated order data for a specific order 
+    # based on the given shopify id
     response = requests.get(
         url,
         headers=headers
@@ -50,8 +52,9 @@ def update_order_completed(shopify_id, completed):
     order = response.json()["order"]
     tags = [tag.strip() for tag in order["tags"].split(",") if tag.strip()]
 
-    # st.write(order["tags"])
-
+    # if order is to be marked as completed,
+    # attach a completed tag to the order
+    # otherwise, remove any existing completed tag from the order
     COMPLETED_TAG = "tdb_completed"
     if completed:
         if COMPLETED_TAG not in tags:
@@ -68,6 +71,7 @@ def update_order_completed(shopify_id, completed):
         }
     }
 
+    # update specific order with new updated tag list
     response = requests.put(
         url,
         headers=headers,

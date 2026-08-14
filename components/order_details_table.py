@@ -77,6 +77,8 @@ def display_order_details_table():
 
     updated = False
 
+    # if the completed status of an order is edited by the user,
+    # update shopify backend accordingly
     for _, row in edited_df.iterrows():
 
         shopify_id = row["Shopify ID"]
@@ -93,6 +95,7 @@ def display_order_details_table():
             )
 
             updated = updated or changed
+    # rerun so dashbaord reflects the most updated information
     if updated:
         st.rerun()
 
