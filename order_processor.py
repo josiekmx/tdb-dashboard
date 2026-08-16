@@ -174,8 +174,9 @@ def process_orders():
             elif is_scent(sku):
                 scent.append(sku)
             else:
-                # indicates that there is another main item order
-                # belonging to the same order/customer
+                # indicates that there is another item within
+                # the same order, which is a main item and 
+                # not a typical add-on item
                 if main_sku is not None: 
                     main_sku = f"COMPLEX ORDER (>1 main item)"
                     break

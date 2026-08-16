@@ -5,7 +5,7 @@ SHOP = st.secrets["SHOP"]
 TOKEN = st.secrets["TOKEN"]
 
 # WARNING: currently limits order retrieval to 250 open orders 
-# as this is the maximum records that can be retrieved 
+# as this is the maximum number of records that can be retrieved 
 # per request using REST Admin API. Fulfilled, archived, or cancelled
 # orders will not be retrieved
 
@@ -33,22 +33,21 @@ def get_orders(limit=250):
     return response.json()["orders"]
 
 
+# updates a specific shopify order with completion status
 def update_order_completed(shopify_id, completed):
     url = f"https://{SHOP}/admin/api/2026-01/orders/{shopify_id}.json"
-
     headers = {
         "X-Shopify-Access-Token": TOKEN,
         "Content-Type": "application/json"
     }
 
-    # retrieve updated order data for a specific order 
+    # retrieves the most updated order data for a specific order 
     # based on the given shopify id
     response = requests.get(
         url,
         headers=headers
     )
     response.raise_for_status()
-
     order = response.json()["order"]
     tags = [tag.strip() for tag in order["tags"].split(",") if tag.strip()]
 
@@ -63,7 +62,6 @@ def update_order_completed(shopify_id, completed):
         tags = [tag for tag in tags if tag != COMPLETED_TAG]
 
     updated_tags = ", ".join(tags)
-
     payload = {
         "order": {
             "id": shopify_id,
@@ -71,7 +69,7 @@ def update_order_completed(shopify_id, completed):
         }
     }
 
-    # update specific order with new updated tag list
+    # update specific order on shopify with the new updated tag list
     response = requests.put(
         url,
         headers=headers,
@@ -79,5 +77,4 @@ def update_order_completed(shopify_id, completed):
     )
 
     response.raise_for_status()
-
     return True
