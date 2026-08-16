@@ -27,7 +27,7 @@ def display_order_details_table():
         key="selected_slots",
     )
 
-    # filter orders according to data and delivery/pickup slot
+    # filter orders according to date and delivery/pickup slot
     filtered = df[df["Delivery Date"] == selected_date]
     if selected_slots:
         filtered = filtered[filtered["Delivery Slot"].isin(selected_slots)]
@@ -69,18 +69,17 @@ def display_order_details_table():
                 "Completed"
             )
         },
+        # only allow completed status column to be edited
         disabled=[
             col for col in display_df.columns
             if col != "Completed"
         ]
     )
 
-    updated = False
-
     # if the completed status of an order is edited by the user,
-    # update shopify backend accordingly
+    # detect this edit and update shopify backend accordingly
+    updated = False
     for _, row in edited_df.iterrows():
-
         shopify_id = row["Shopify ID"]
 
         original_completed = filtered.loc[
@@ -95,7 +94,7 @@ def display_order_details_table():
             )
 
             updated = updated or changed
-    # rerun so dashbaord reflects the most updated information
+    # rerun so dashbaord reflects any updated completed status information
     if updated:
         st.rerun()
 

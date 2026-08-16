@@ -2,7 +2,7 @@
 
 A Streamlit dashboard that automates the processing of Shopify orders for The Daily Blooms.
 
-Instead of manually exporting Shopify orders into Excel and sorting them at each delivery time slot, this dashboard retrieves open orders directly from the Shopify Admin API, processes them into a reader friendly format, and provides order summaries for bouquet preparation.
+Instead of manually exporting Shopify orders into Excel and sorting them at each delivery time slot, this dashboard retrieves open orders directly from the Shopify Admin API, processes them into a reader friendly format, and provides order summaries for order preparation.
 
 ---
 
@@ -13,7 +13,7 @@ Instead of manually exporting Shopify orders into Excel and sorting them at each
   - Order ID
   - SKU
   - Custom Order Details
-  - Quanitity 
+  - Quantity 
   - Ribbon Add-ons
   - Music Boxes Add-ons
   - Polaroid Add-ons
@@ -87,7 +87,7 @@ Responsible for communicating with the Shopify Admin API.
 
 2. update_order_completed()
 
-   Updates the completion status of a specific order in Shopify by adding or removing the tdb_completed tag. When completed is True, the function adds the tag to the order if it is not already present. When completed is False, it removes the tag if it exists. The function first retrieves the order's current tags to ensure that existing tags are preserved, then sends the updated tag list to the Shopify Admin API.
+   Updates the completion status of a specific order in Shopify by adding or removing the tdb_completed tag. When the completed variable is True, the function adds the tag to the order if it is not already present. When the completed variable is False, it removes the tdb_completed tag if it exists. The function first retrieves the order's current tags to ensure that existing tags are preserved, then sends the updated tag list using the Shopify Admin API.
 
 ---
 
@@ -129,14 +129,14 @@ Responsibilities:
         3. Groups line items belonging to the same customer order.
         4. Merges add-on products into their corresponding main order.
         5. Detects:
-        - Complex orders containing multiple main products.
-        - Custom orders without a SKU, then attaching custom order details
+           - Complex orders containing multiple main products.
+           - Custom orders without a SKU, then attaching custom order details
         6. Standardises delivery dates.
         7. Filters out orders with delivery dates before today.
         8. Sorts remaining orders by:
-        - Delivery Date
-        - Delivery Slot
-        - SKU
+           - Delivery Date
+           - Delivery Slot
+           - SKU
         9. Returns the processed DataFrame.
 
 #### Notes
@@ -148,7 +148,7 @@ Responsibilities:
 
 ## components/authentication.py
 
-Checks whether user is password aunthenticated. Otherwise, user is directed to the login page.
+Checks whether the user is password aunthenticated. Otherwise, user is directed to the login page.
 
 #### Functions: 
 
@@ -171,26 +171,24 @@ Displays the main order details table within the Streamlit dashboard.
         3. Displays a multi-select widget allowing one or more delivery slots to be selected.
         4. Filters orders according to the selected date and delivery slot(s).
         5. Sorts the filtered orders by:
-        - Delivery Slot
-        - Completed Status
-        - SKU
+           - Delivery Slot
+           - Completed Status
+           - SKU
         6. Dynamically calculates the table height based on the number of displayed rows (up to a maximum height).
         7. Displays the filtered orders using Streamlit's `st.data_editor()` where all columns are in read only format except the completed status column.
         8. Returns the filtered DataFrame for use by downstream dashboard components (e.g. summary tables).
 
 #### Notes
 
-- The first available delivery date is automatically selected when the dashboard loads.
+- The first available delivery date is selected by default when the dashboard loads.
 - All available delivery slots are selected by default.
-- The filtered DataFrame is returned so it can be reused by other dashboard components without repeating the filtering logic.
-
 ---
 
 ## components/order_summary_tables.py
 
 Displays summary tables for delivery and pickup orders.
 
-This module is responsible for:
+Responsibilities:
 - Separating filtered orders into deliveries and pickups.
 - Displaying the total number of delivery and pickup orders.
 - Summarising the number of orders for each SKU.
@@ -204,8 +202,8 @@ This module is responsible for:
    The function performs the following steps:
 
         1. Separates the filtered orders into:
-        - Delivery orders.
-        - Pickup orders.
+           - Delivery orders.
+           - Pickup orders.
         2. Calculates the total number of delivery orders and displays the result as a metric.
         3. Groups delivery orders by SKU and counts the number of occurrences of each SKU.
         4. Displays the delivery summary table.
