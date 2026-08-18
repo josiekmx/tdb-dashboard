@@ -58,7 +58,7 @@ def get_assignee(tags):
     for name, tag in ASSIGNEES.items():
         if tag in tags:
             return name
-    return "Unassigned"    
+    return None    
 
 # standardise dates to "%Y-%m-%d" format
 def standardise_date(date_str):
@@ -169,6 +169,7 @@ def process_orders():
         custom_details = ""
         shopify_id = None
         completed = False
+        assignee = None
 
         for _, row in group.iterrows():
             sku = row["sku"]
@@ -193,7 +194,9 @@ def process_orders():
                 delivery_slot = row["delivery_slot"]
                 delivery_type = row["delivery_type"]
                 shopify_id = row["shopify_id"]
+                assignee = row["assignee"]
                 completed = row["completed"]
+                
 
         # catches custom orders where sku is None
         if pd.isna(main_sku) or str(main_sku).strip() == "":
@@ -216,7 +219,9 @@ def process_orders():
             "Delivery Slot": delivery_slot,
             "Delivery Date": delivery_date,
             "Delivery Type": delivery_type,
+            "Assignee": assignee,
             "Completed": completed
+            
         })
 
     processed_df = pd.DataFrame(processed_rows)
