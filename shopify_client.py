@@ -100,7 +100,7 @@ def update_order_assignee(shopify_id, assignee):
 
         # Validate before making any Shopify write
         if assignee is not None and assignee not in ASSIGNEES:
-        raise ValueError(f"Invalid assignee: {assignee}")
+            raise ValueError(f"Invalid assignee: {assignee}")
 
         # Get latest version of order
         response = requests.get(url,
