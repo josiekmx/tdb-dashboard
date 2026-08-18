@@ -148,7 +148,7 @@ def process_orders():
                 "delivery_date": standardise_date(get_delivery_date(order, item)),
                 "delivery_slot": get_delivery_slot(order, item),
                 "delivery_type": get_delivery_type(order, item),
-                "completed": "tdb_completed" in order["tags"]
+                "completed": "tdb_completed" in order["tags"],
                 "assignee": get_assignee(order["tags"])
             })
 
