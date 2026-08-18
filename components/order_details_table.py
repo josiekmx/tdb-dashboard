@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 from order_processor import process_orders
 from shopify_client import (
@@ -119,7 +120,10 @@ def display_order_details_table():
         new_assignee = row["Assignee"]
 
         # blank means no assignee
-        if not new_assignee:
+        if pd.isna(original_assignee):
+            original_assignee = None
+        
+        if pd.isna(new_assignee):
             new_assignee = None
 
         if new_assignee != original_assignee:
