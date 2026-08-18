@@ -1,5 +1,5 @@
 import pandas as pd
-from shopify_client import get_orders
+from shopify_client import get_orders, ASSIGNEES
 import re
 from datetime import datetime
 import json
@@ -53,6 +53,12 @@ def get_delivery_date(order, item):
     if match:
         return match.group()
     return None
+
+def get_assignee(tags):
+    for name, tag in ASSIGNEES.items():
+        if tag in tags:
+            return name
+    return "Unassigned"    
 
 # standardise dates to "%Y-%m-%d" format
 def standardise_date(date_str):
@@ -142,7 +148,8 @@ def process_orders():
                 "delivery_date": standardise_date(get_delivery_date(order, item)),
                 "delivery_slot": get_delivery_slot(order, item),
                 "delivery_type": get_delivery_type(order, item),
-                "completed": "tdb_completed" in order["tags"]
+                "completed": "tdb_completed" in order["tags"],
+                "assignee": get_assignee(order["tags"])
             })
 
     df = pd.DataFrame(rows)

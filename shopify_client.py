@@ -88,62 +88,64 @@ def update_order_completed(shopify_id, completed):
     response.raise_for_status()
     return True
 
-    # updates a specific shopify order with an assignee
+# updates a specific shopify order with an assignee
 def update_order_assignee(shopify_id, assignee):
         
-        url = f"https://{SHOP}/admin/api/2026-01/orders/{shopify_id}.json"
+    url = f"https://{SHOP}/admin/api/2026-01/orders/{shopify_id}.json"
         
-        headers = {
+    headers = {
         "X-Shopify-Access-Token": TOKEN,
         "Content-Type": "application/json"
-        } 
+    } 
 
-        # Validate before making any Shopify write
-        if assignee is not None and assignee not in ASSIGNEES:
+    # Validate before making any Shopify write
+    if assignee is not None and assignee not in ASSIGNEES:
         raise ValueError(f"Invalid assignee: {assignee}")
 
-        # Get latest version of order
-        response = requests.get(url,
-        headers=headers)
+    # Get latest version of order
+    response = requests.get(
+        url,
+        headers=headers
+    )
 
-        response.raise_for_status()
+    response.raise_for_status()
 
-        order = response.json()["order"]
+    order = response.json()["order"]
 
-        # Get existing tags
-        tags = [
-            tag.strip()
-            for tag in order.get("tags", "").split(",")
-            if tag.strip()
+    # Get existing tags
+    tags = [
+        tag.strip()
+        for tag in order.get("tags", "").split(",")
+        if tag.strip()
         ]
 
-        # Remove only existing assignee tag
-        tags = [
-            tag for tag in tags
-            if not tag.startswith(ASSIGNEE_TAG_PREFIX)
-        ]
+    # Remove only existing assignee tag
+    tags = [
+        tag for tag in tags
+        if not tag.startswith(ASSIGNEE_TAG_PREFIX)
+    ]
 
-        # Add new assignee
-        if assignee is not None:
+    # Add new assignee
+    if assignee is not None:
         tags.append(ASSIGNEES[assignee])
 
-        updated_tags = ", ".join(tags)
+    updated_tags = ", ".join(tags)
 
-        payload = {
-            "order": {
-            "id": shopify_id,
-            "tags": updated_tags
-            }
+    payload = {
+        "order": {
+        "id": shopify_id,
+        "tags": updated_tags
         }
+    }
 
-        response = requests.put(
+    response = requests.put(
         url,
         headers=headers,
         json=payload
-        )
+    )
 
-        response.raise_for_status()
+    response.raise_for_status()
 
-        return True   
+    return True   
         
     
