@@ -1,6 +1,10 @@
 import streamlit as st
 from order_processor import process_orders
-from shopify_client import update_order_completed
+from shopify_client import (
+    update_order_completed,
+    update_order_assignee,
+    ASSIGNEES,
+)
 
 def display_order_details_table():
     df = process_orders()
@@ -67,21 +71,30 @@ def display_order_details_table():
             "Shopify ID": None,
             "Completed": st.column_config.CheckboxColumn(
                 "Completed"
-            )
-        },
+            ),
+            "Assignee": st.column_config.SelectboxColumn(
+                "Assignee",
+                options=list(ASSIGNEES.keys()),
+                required=False,
+            ),
+        }, 
+            
+
         # only allow completed status column to be edited
         disabled=[
             col for col in display_df.columns
-            if col != "Completed"
+            if col not in ["Completed", "Assignee"]
         ]
     )
 
-    # if the completed status of an order is edited by the user,
+    
+    # detect changes in completed status and assignee
     # detect this edit and update shopify backend accordingly
     updated = False
     for _, row in edited_df.iterrows():
         shopify_id = row["Shopify ID"]
 
+        #detect changes in completed status 
         original_completed = filtered.loc[
             filtered["Shopify ID"] == shopify_id,
             "Completed"
@@ -94,6 +107,29 @@ def display_order_details_table():
             )
 
             updated = updated or changed
+
+        # detect changes in assignee 
+        # if the assignee of an order is edited by the user,
+        # detect this edit and update shopify backend accordingly
+        original_assignee = filtered.loc[
+            filtered["Shopify ID"] == shopify_id,
+            "Assignee"
+        ].iloc[0]
+
+        new_assignee = row["Assignee"]
+
+        # blank means no assignee
+        if not new_assignee:
+            new_assignee = None
+
+        if new_assignee != original_assignee:
+            changed = update_order_assignee(
+                shopify_id,
+                new_assignee
+            )
+
+            updated = updated or changed
+
     # rerun so dashbaord reflects any updated completed status information
     if updated:
         st.rerun()
