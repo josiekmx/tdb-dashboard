@@ -125,7 +125,7 @@ def update_order_assignee(shopify_id, assignee):
 
         # Add new assignee
         if assignee is not None:
-        tags.append(ASSIGNEES[assignee])
+            tags.append(ASSIGNEES[assignee])
 
         updated_tags = ", ".join(tags)
 
