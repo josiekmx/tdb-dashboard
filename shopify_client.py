@@ -9,6 +9,15 @@ TOKEN = st.secrets["TOKEN"]
 # per request using REST Admin API. Fulfilled, archived, or cancelled
 # orders will not be retrieved
 
+
+ASSIGNEES = {
+    "Josie": "tdb_assignee_JOSIE",
+    "Enie": "tdb_assignee_ENIE",
+    "Puiyee": "tdb_assignee_PUIYEE",
+}
+
+ASSIGNEE_TAG_PREFIX = "tdb_assignee_"
+
 # retrieves orders from shopify database
 # and returns the latest 250 open orders created
 # in json format
