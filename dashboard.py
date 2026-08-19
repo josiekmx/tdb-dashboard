@@ -4,20 +4,22 @@ from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
 from shopify_client import get_orders
 
-# TEMPORARY: inspect Shopify order structure without exposing customer values
+# TEMPORARY: inspect remaining Shopify fields needed for Detrack
 orders = get_orders()
 test_order = orders[0]
 
-# Display available top-level Shopify order fields
-st.write("ORDER FIELDS")
-st.write(list(test_order.keys()))
+# Display shipping address field names
+st.write("SHIPPING ADDRESS FIELDS")
+st.write(list((test_order.get("shipping_address") or {}).keys()))
 
-# Display product property names used by Shopify
+# Display order-level note attribute names
+st.write("NOTE ATTRIBUTE NAMES")
+for attr in test_order.get("note_attributes", []):
+    st.write(attr.get("name"))
+
+# Display line-item property names
 st.write("LINE ITEM PROPERTIES")
-
 for item in test_order.get("line_items", []):
-    st.write("Product:", item.get("title"))
-
     for prop in item.get("properties", []):
         st.write(prop.get("name"))
 
