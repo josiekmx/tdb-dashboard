@@ -13,12 +13,13 @@ TOKEN = st.secrets["TOKEN"]
 ASSIGNEES = {
     "Enie": "tdb_assignee_ENIE",
     "Puiyee": "tdb_assignee_PUIYEE",
-    "Justin": "tdb_assignee_PUIYEE",
+    "Justin": "tdb_assignee_JUSTIN",
     "Josie": "tdb_assignee_JOSIE",
     "Sophia": "tdb_assignee_SOPHIA",
     "Natalie": "tdb_assignee_NATALIE",
     "Christy": "tdb_assignee_CHRISTY",
-    "Qianhui": "tdb_assignee_QIANHUI"
+    "Qianhui": "tdb_assignee_QIANHUI",
+    "Zephyr": "tdb_assignee_ZEPHYR"
 }
 
 ASSIGNEE_TAG_PREFIX = "tdb_assignee_"
