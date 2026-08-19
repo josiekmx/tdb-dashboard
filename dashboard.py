@@ -2,6 +2,7 @@ import streamlit as st
 from components.authentication import check_password
 from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
+from shopify_client import get_orders
 
 # TEMPORARY: inspect Shopify order structure without exposing customer values
 orders = get_orders()
