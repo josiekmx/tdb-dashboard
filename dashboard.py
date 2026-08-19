@@ -3,6 +3,23 @@ from components.authentication import check_password
 from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
 
+# TEMPORARY: inspect Shopify order structure without exposing customer values
+orders = get_orders()
+test_order = orders[0]
+
+# Display available top-level Shopify order fields
+st.write("ORDER FIELDS")
+st.write(list(test_order.keys()))
+
+# Display product property names used by Shopify
+st.write("LINE ITEM PROPERTIES")
+
+for item in test_order.get("line_items", []):
+    st.write("Product:", item.get("title"))
+
+    for prop in item.get("properties", []):
+        st.write(prop.get("name"))
+
 # displays login page to authenticate users
 if not check_password():
     st.stop()
