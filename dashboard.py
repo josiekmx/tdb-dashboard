@@ -4,24 +4,29 @@ from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
 from shopify_client import get_orders
 
-# TEMPORARY: inspect remaining Shopify fields needed for Detrack
+# TEMPORARY: locate where additional request / remarks are stored
 orders = get_orders()
-test_order = orders[0]
 
-# Display shipping address field names
-st.write("SHIPPING ADDRESS FIELDS")
-st.write(list((test_order.get("shipping_address") or {}).keys()))
+for order in orders[:30]:
 
-# Display order-level note attribute names
-st.write("NOTE ATTRIBUTE NAMES")
-for attr in test_order.get("note_attributes", []):
-    st.write(attr.get("name"))
+    if order.get("note"):
+        st.write("ORDER HAS NOTE")
 
-# Display line-item property names
-st.write("LINE ITEM PROPERTIES")
-for item in test_order.get("line_items", []):
-    for prop in item.get("properties", []):
-        st.write(prop.get("name"))
+    for attr in order.get("note_attributes", []):
+        st.write("NOTE ATTRIBUTE:", attr.get("name"))
+
+    for item in order.get("line_items", []):
+        for prop in item.get("properties", []):
+            name = prop.get("name")
+
+            if any(word in str(name).lower() for word in [
+                "request",
+                "remark",
+                "instruction",
+                "note",
+                "additional"
+            ]):
+                st.write("LINE ITEM PROPERTY:", name)
 
 # displays login page to authenticate users
 if not check_password():
