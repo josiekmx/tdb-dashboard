@@ -22,7 +22,7 @@ def get_google_sheets_client():
 def get_sku_tag_mapping():
     client = get_google_sheets_client()
 
-    spreadsheet = client.open("TDB - SKU Tag Mapping")
+    spreadsheet = client.open("SKU Mapping")
     worksheet = spreadsheet.worksheet("SKU Tags")
 
     rows = worksheet.get_all_records()
