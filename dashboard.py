@@ -4,29 +4,14 @@ from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
 from shopify_client import get_orders
 
-# TEMPORARY: locate where additional request / remarks are stored
+# TEMPORARY: inspect one order note value
 orders = get_orders()
 
-for order in orders[:30]:
-
+for order in orders:
     if order.get("note"):
-        st.write("ORDER HAS NOTE")
-
-    for attr in order.get("note_attributes", []):
-        st.write("NOTE ATTRIBUTE:", attr.get("name"))
-
-    for item in order.get("line_items", []):
-        for prop in item.get("properties", []):
-            name = prop.get("name")
-
-            if any(word in str(name).lower() for word in [
-                "request",
-                "remark",
-                "instruction",
-                "note",
-                "additional"
-            ]):
-                st.write("LINE ITEM PROPERTY:", name)
+        st.write("NOTE VALUE")
+        st.write(order.get("note"))
+        break
 
 # displays login page to authenticate users
 if not check_password():
