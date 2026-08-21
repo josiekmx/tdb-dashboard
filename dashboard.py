@@ -3,16 +3,7 @@ from components.authentication import check_password
 from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
 from shopify_client import get_orders
-from detrack.order_builder import build_delivery_orders
 
-# TEMPORARY: test Shopify → TDB delivery order conversion
-orders = get_orders()
-delivery_orders = build_delivery_orders(orders)
-
-test_order = delivery_orders[0]
-
-st.write("TDB DELIVERY ORDER")
-st.write(test_order)
 
 # displays login page to authenticate users
 if not check_password():
