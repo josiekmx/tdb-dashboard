@@ -4,15 +4,6 @@ from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
 from shopify_client import get_orders
 
-# TEMPORARY: inspect one order note value
-orders = get_orders()
-
-for order in orders:
-    if order.get("note"):
-        st.write("NOTE VALUE")
-        st.write(order.get("note"))
-        break
-
 # displays login page to authenticate users
 if not check_password():
     st.stop()
