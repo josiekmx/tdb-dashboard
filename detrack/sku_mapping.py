@@ -3,10 +3,11 @@ import streamlit as st
 from google.oauth2.service_account import Credentials
 
 
-# Create a read-only Google Sheets client using Streamlit Secrets
+# Create a read-only Google Sheets client
 def get_google_sheets_client():
     scopes = [
-        "https://www.googleapis.com/auth/spreadsheets.readonly"
+        "https://www.googleapis.com/auth/spreadsheets.readonly",
+        "https://www.googleapis.com/auth/drive.readonly",
     ]
 
     credentials = Credentials.from_service_account_info(
