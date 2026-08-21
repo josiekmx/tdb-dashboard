@@ -4,7 +4,9 @@ def calculate_tags(delivery_order, sku_mapping):
     missing_skus = []
 
     for item in delivery_order.line_items:
-        sku = item.sku.strip()
+        
+        # Normalise Shopify SKU before looking it up
+        sku = str(item.sku).strip().upper()
 
         if sku not in sku_mapping:
             missing_skus.append(sku)

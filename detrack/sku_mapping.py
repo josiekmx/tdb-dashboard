@@ -31,7 +31,8 @@ def get_sku_tag_mapping():
     mapping = {}
 
     for row in rows:
-        sku = str(row.get("SKU", "")).strip()
+        # Normalise SKU so spaces/case do not break matching
+        sku = str(row.get("SKU", "")).strip().upper()
         tags_required = row.get("Tags Required")
 
         # Skip blank or incomplete rows
