@@ -131,6 +131,9 @@ class TDBDeliveryOrder:
     # operationally important.
     additional_request: Optional[str] = None
 
+    # Card details are kept separately from delivery recipient details
+    card_to: Optional[str] = None
+    card_message: Optional[str] = None
 
     # --------------------------------------------------------
     # PRODUCTS
