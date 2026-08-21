@@ -23,6 +23,7 @@ def get_sku_tag_mapping():
     client = get_google_sheets_client()
 
     spreadsheet = client.open("SKU Mapping")
+
     worksheet = spreadsheet.worksheet("SKU Tags")
 
     rows = worksheet.get_all_records()
@@ -33,7 +34,8 @@ def get_sku_tag_mapping():
         sku = str(row.get("SKU", "")).strip()
         tags_required = row.get("Tags Required")
 
-        if not sku:
+        # Skip blank or incomplete rows
+        if not sku or tags_required in (None, ""):
             continue
 
         mapping[sku] = int(tags_required)
