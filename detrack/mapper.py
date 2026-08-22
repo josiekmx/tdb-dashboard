@@ -1,6 +1,6 @@
-# Convert Shopify timeslot into Detrack timeslot label
-def map_timeslot_to_detrack(delivery_order):
-    if delivery_order.delivery_type == "Pickup":
+# Convert Shopify timeslot into Detrack label
+def map_timeslot_to_detrack(order):
+    if order.delivery_type == "Pickup":
         return "PICK UP"
 
     timeslot_mapping = {
@@ -9,7 +9,4 @@ def map_timeslot_to_detrack(delivery_order):
         "5:00 PM - 10:00 PM": "NIGHT",
     }
 
-    return timeslot_mapping.get(
-        delivery_order.delivery_slot,
-        "CUSTOM"
-    )
+    return timeslot_mapping.get(order.delivery_slot)

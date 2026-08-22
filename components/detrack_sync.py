@@ -1,42 +1,39 @@
-import pandas as pd
-import streamlit as st
-
-from shopify_client import get_orders
-from detrack.order_builder import build_delivery_orders
-from detrack.sku_mapping import get_sku_tag_mapping
-from detrack.tag_calculator import calculate_tags
-from detrack.validator import validate_order
-
-
-# Build and validate all Shopify orders for Detrack
-def prepare_detrack_orders():
-    orders = get_orders()
-    delivery_orders = build_delivery_orders(orders)
-    sku_mapping = get_sku_tag_mapping()
-
-    for order in delivery_orders:
-        total_tags, missing_skus = calculate_tags(order, sku_mapping)
-
-        order.number_of_tags = total_tags
-        validate_order(order, missing_skus)
-
-    return delivery_orders
-
-
-# Display Detrack-ready orders as a preview table
+# Display Detrack orders by selected delivery date
 def display_detrack_sync():
     st.subheader("Detrack Sync")
 
     delivery_orders = prepare_detrack_orders()
 
+    # Get available dates and default to the earliest
+    available_dates = sorted({
+        order.delivery_date
+        for order in delivery_orders
+        if order.delivery_date
+    })
+
+    if not available_dates:
+        st.info("No upcoming orders found.")
+        return
+
+    selected_date = st.selectbox(
+        "Delivery / Pickup Date",
+        available_dates
+    )
+
+    # Only show orders for the selected date
+    date_orders = [
+        order
+        for order in delivery_orders
+        if order.delivery_date == selected_date
+    ]
+
     rows = []
 
-    for order in delivery_orders:
+    for order in date_orders:
         rows.append({
             "Order": order.order_number,
-            "Date": order.delivery_date,
             "Type": order.delivery_type,
-            "Timeslot": order.delivery_slot,
+            "Timeslot": map_timeslot_to_detrack(order),
             "Recipient": order.recipient_name,
             "Tags": order.number_of_tags,
             "Status": order.validation_status,
