@@ -52,15 +52,6 @@ def display_detrack_sync():
 
     delivery_orders = prepare_detrack_orders()
 
-    # TEMPORARY: verify sender details
-    if delivery_orders:
-        test_order = delivery_orders[0]
-
-        st.write("TEST ORDER:", test_order.order_number)
-        st.write("SENDER NAME:", test_order.sender_name)
-        st.write("SENDER EMAIL:", test_order.sender_email)
-        st.write("SENDER PHONE:", test_order.sender_phone)
-
     # Get available upcoming order dates
     available_dates = sorted({
         order.delivery_date
