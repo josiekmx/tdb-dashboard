@@ -11,8 +11,10 @@ def calculate_tags(delivery_order, sku_mapping):
             total_tags += item.quantity
             continue
 
+        # Unmapped SKU defaults to 1 tag each but is flagged for review
         if sku not in sku_mapping:
             missing_skus.append(sku)
+            total_tags += item.quantity
             continue
 
         tags_per_item = sku_mapping[sku]
