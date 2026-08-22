@@ -6,7 +6,7 @@ from detrack.order_builder import build_delivery_orders
 from detrack.sku_mapping import get_sku_tag_mapping
 from detrack.tag_calculator import calculate_tags
 from detrack.validator import validate_order
-from detrack.mapper import map_timeslot_to_detrack
+from detrack.mapper import map_timeslot_to_detrack, map_orders_to_detrack
 
 
 # Build and validate upcoming unfulfilled Shopify orders for Detrack
@@ -94,6 +94,18 @@ def display_detrack_sync():
 
     st.dataframe(
         df,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # Preview the exact rows that will eventually be sent to Detrack
+    st.subheader("Detrack Upload Preview")
+
+    detrack_rows = map_orders_to_detrack(date_orders)
+    detrack_df = pd.DataFrame(detrack_rows)
+
+    st.dataframe(
+        detrack_df,
         use_container_width=True,
         hide_index=True
     )
