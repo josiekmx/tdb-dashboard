@@ -14,6 +14,11 @@ orders = get_orders()
 delivery_orders = build_delivery_orders(orders)
 sku_mapping = get_sku_tag_mapping()
 
+# TEMPORARY: inspect Google Sheet SKU mapping
+st.write("F IN MAPPING:", "F" in sku_mapping)
+st.write("F VALUE:", sku_mapping.get("F"))
+st.write("FIRST 20 SKU KEYS:", list(sku_mapping.keys())[:20])
+
 test_order = delivery_orders[0]
 
 total_tags, missing_skus = calculate_tags(
