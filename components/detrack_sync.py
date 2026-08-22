@@ -121,7 +121,7 @@ def display_detrack_sync():
         "Recipient Number",
         "Sender's Contact",
         "Notes",
-        "Assign To",
+        "Assign to",
         "Sender Email",
         "Sender Name",
         "Group",
