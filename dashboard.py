@@ -23,7 +23,7 @@ total_tags, missing_skus = calculate_tags(
     sku_mapping
 )
 # TEMPORARY: force an error to test validation
-test_order.recipient_phone = None
+test_order.sku = "INVALID-SKU-TEST"
 
 test_order.number_of_tags = total_tags
 test_order = validate_order(test_order, missing_skus)
