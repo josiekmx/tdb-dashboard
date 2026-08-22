@@ -18,8 +18,7 @@ sku_mapping = get_sku_tag_mapping()
 
 test_order = delivery_orders[0]
 
-# TEMPORARY: force a missing SKU mapping to test validation
-test_order.line_items[0].sku = ""
+
 total_tags, missing_skus = calculate_tags(
     test_order,
     sku_mapping
