@@ -110,8 +110,31 @@ def display_detrack_sync():
     detrack_rows = map_orders_to_detrack(eligible_orders)
     detrack_df = pd.DataFrame(detrack_rows)
 
+    # Hide permanently unused Detrack columns from preview
+    preview_columns = [
+        "Order ID",
+        "Delivery Date",
+        "Delivery Timeslot",
+        "Delivery Address",
+        "Postal Code",
+        "Recipient's Name",
+        "Recipient Number",
+        "Sender's Contact",
+        "Notes",
+        "Assign To",
+        "Sender Email",
+        "Sender Name",
+        "Group",
+        "No. of tags",
+        "SKU",
+        "Item Description",
+        "Quantity",
+    ]
+
+    detrack_preview_df = detrack_df[preview_columns]
+
     st.dataframe(
-        detrack_df,
+        detrack_preview_df,
         use_container_width=True,
         hide_index=True
     )
