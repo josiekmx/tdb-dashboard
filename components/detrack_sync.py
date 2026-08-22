@@ -9,12 +9,21 @@ from detrack.validator import validate_order
 from detrack.mapper import map_timeslot_to_detrack
 
 
-# Build and validate all Shopify orders for Detrack
+# Build and validate upcoming unfulfilled Shopify orders for Detrack
 def prepare_detrack_orders():
     orders = get_orders()
-    delivery_orders = build_delivery_orders(orders)
+
+    # Only keep orders that are not fully fulfilled
+    unfulfilled_orders = [
+        order
+        for order in orders
+        if order.get("fulfillment_status") != "fulfilled"
+    ]
+
+    delivery_orders = build_delivery_orders(unfulfilled_orders)
     sku_mapping = get_sku_tag_mapping()
 
+    # Calculate tag quantity and validate each order
     for order in delivery_orders:
         total_tags, missing_skus = calculate_tags(
             order,
@@ -23,6 +32,16 @@ def prepare_detrack_orders():
 
         order.number_of_tags = total_tags
         validate_order(order, missing_skus)
+
+    # Only keep delivery / pickup dates from today onwards
+    today = pd.Timestamp.now(tz="Asia/Singapore").date()
+
+    delivery_orders = [
+        order
+        for order in delivery_orders
+        if order.delivery_date
+        and pd.to_datetime(order.delivery_date).date() >= today
+    ]
 
     return delivery_orders
 
@@ -33,7 +52,7 @@ def display_detrack_sync():
 
     delivery_orders = prepare_detrack_orders()
 
-    # Get available order dates
+    # Get available upcoming order dates
     available_dates = sorted({
         order.delivery_date
         for order in delivery_orders
@@ -41,7 +60,7 @@ def display_detrack_sync():
     })
 
     if not available_dates:
-        st.info("No upcoming orders found.")
+        st.info("No upcoming unfulfilled orders found.")
         return
 
     # Select which date to prepare for Detrack
