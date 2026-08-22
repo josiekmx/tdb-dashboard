@@ -108,6 +108,11 @@ class TDBDeliveryOrder:
     # Recipient's contact number.
     recipient_phone: Optional[str] = None
 
+    # Sender / purchaser details
+    sender_name: Optional[str] = None
+    sender_email: Optional[str] = None
+    sender_phone: Optional[str] = None
+
 
     # --------------------------------------------------------
     # ADDRESS

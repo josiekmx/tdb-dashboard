@@ -126,6 +126,11 @@ def build_delivery_order(order):
 
         recipient_name=shipping.get("name"),
         recipient_phone=shipping.get("phone"),
+        
+        # Sender / purchaser details
+        sender_name=billing.get("name"),
+        sender_email=order.get("email"),
+        sender_phone=billing.get("phone"),
 
         address=build_address(order),
         postal_code=shipping.get("zip"),
