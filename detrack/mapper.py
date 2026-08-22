@@ -1,6 +1,8 @@
-# Convert Shopify timeslot into Detrack label
+# Convert Shopify timeslot into the label printed on Detrack tags
 def map_timeslot_to_detrack(order):
     if order.delivery_type == "Pickup":
+        if order.delivery_slot:
+            return f"PICK UP {order.delivery_slot}"
         return "PICK UP"
 
     timeslot_mapping = {
