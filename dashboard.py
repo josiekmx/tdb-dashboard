@@ -9,6 +9,8 @@ from detrack.sku_mapping import get_sku_tag_mapping
 from detrack.tag_calculator import calculate_tags
 from detrack.validator import validate_order
 
+from components.detrack_sync import display_detrack_sync
+
 #----------------------- TESTING CODE -----------------------
 
 
@@ -28,6 +30,22 @@ st.set_page_config(
 # dashboard header
 st.header("The Daily Blooms Dashboard")
 
+# Main dashboard sections
+orders_tab, detrack_tab = st.tabs([
+    "Orders",
+    "Detrack Sync"
+])
+
+with orders_tab:
+    # order details table
+    filtered_table_data = display_order_details_table()
+
+    # summary tables 
+    display_order_summary_tables(filtered_table_data)
+
+with detrack_tab:
+    display_detrack_sync()
+
 # enables refresh
 # upon refresh, the date and timeslots will return to 
 # default state of the earliest date and all timeslots respectively. 
@@ -40,8 +58,5 @@ if st.button("Refresh"):
 # insert empty space to optimise ui
 st.markdown("<br>", unsafe_allow_html=True)
 
-# order details table
-filtered_table_data = display_order_details_table()
 
-# summary tables 
-display_order_summary_tables(filtered_table_data)
+
