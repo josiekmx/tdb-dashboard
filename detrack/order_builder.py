@@ -34,23 +34,36 @@ def get_date_from_tags(tags):
 
 
 # Extract the current delivery / pickup timeslot from Shopify tags
+# Extract the current delivery / pickup timeslot from Shopify tags
 def get_timeslot_from_tags(tags):
     tags = tags or ""
 
-    timeslots = [
+    # Delivery slots
+    delivery_slots = [
         "9:00 AM - 2:00 PM",
         "1:00 PM - 6:00 PM",
         "5:00 PM - 10:00 PM",
     ]
 
-    for timeslot in timeslots:
+    # Pickup slots
+    pickup_slots = [
+        "9:00 AM - 12:00 PM",
+        "12:00 PM - 3:00 PM",
+        "3:00 PM - 5:00 PM",
+        "5:00 PM - 9:00 PM",
+    ]
+
+    # Check pickup slots first
+    for timeslot in pickup_slots:
         if timeslot in tags:
             return timeslot
 
-    if "pickup" in tags.lower() or "pick up" in tags.lower():
-        return "Pick up"
+    # Check delivery slots
+    for timeslot in delivery_slots:
+        if timeslot in tags:
+            return timeslot
 
-    return "Custom Time"
+    return None
 
 
 # Determine whether the Shopify order is Delivery or Pickup
