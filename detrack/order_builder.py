@@ -89,7 +89,8 @@ def build_line_items(order):
     for item in order.get("line_items", []):
         line_items.append(
             DeliveryLineItem(
-                sku=item.get("sku") or "",
+                # Use a standard fallback for custom products without a SKU
+                sku=item.get("sku") or "No SKU - check custom order",
                 product=item.get("title") or "",
                 quantity=item.get("quantity") or 0,
             )

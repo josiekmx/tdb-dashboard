@@ -4,9 +4,12 @@ def calculate_tags(delivery_order, sku_mapping):
     missing_skus = []
 
     for item in delivery_order.line_items:
-        
-        # Normalise Shopify SKU before looking it up
         sku = str(item.sku).strip().upper()
+
+        # Custom products without a SKU default to 1 tag each
+        if sku == "NO SKU - CHECK CUSTOM ORDER":
+            total_tags += item.quantity
+            continue
 
         if sku not in sku_mapping:
             missing_skus.append(sku)
