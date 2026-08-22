@@ -115,6 +115,7 @@ def build_line_items(order):
 # Convert one raw Shopify order into our standard TDB delivery structure
 def build_delivery_order(order):
     shipping = order.get("shipping_address") or {}
+    billing = order.get("billing_address") or {}
 
     return TDBDeliveryOrder(
         shopify_id=str(order.get("id", "")),
@@ -126,8 +127,9 @@ def build_delivery_order(order):
 
         recipient_name=shipping.get("name"),
         recipient_phone=shipping.get("phone"),
-        
+
         # Sender / purchaser details
+        
         sender_name=billing.get("name"),
         sender_email=order.get("email"),
         sender_phone=billing.get("phone"),
