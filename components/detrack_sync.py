@@ -112,6 +112,7 @@ def display_detrack_sync():
 
     # Hide permanently unused Detrack columns from preview
     preview_columns = [
+        "Assign to",
         "Order ID",
         "Delivery Date",
         "Delivery Timeslot",
@@ -121,7 +122,6 @@ def display_detrack_sync():
         "Recipient Number",
         "Sender's Contact",
         "Notes",
-        "Assign to",
         "Sender Email",
         "Sender Name",
         "Group",
