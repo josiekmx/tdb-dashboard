@@ -98,10 +98,16 @@ def display_detrack_sync():
         hide_index=True
     )
 
-    # Preview the exact rows that will eventually be sent to Detrack
+    # Preview only READY and WARNING orders that are eligible for Detrack upload
     st.subheader("Detrack Upload Preview")
 
-    detrack_rows = map_orders_to_detrack(date_orders)
+    eligible_orders = [
+        order
+        for order in date_orders
+        if order.validation_status in ["READY", "WARNING"]
+    ]
+
+    detrack_rows = map_orders_to_detrack(eligible_orders)
     detrack_df = pd.DataFrame(detrack_rows)
 
     st.dataframe(
