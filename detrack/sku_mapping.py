@@ -25,10 +25,6 @@ def get_sku_tag_mapping():
     spreadsheet = client.open("SKU Mapping")
     worksheet = spreadsheet.worksheet("SKU Tags")
 
-    # TEMPORARY: inspect what Google Sheets is returning
-    st.write("HEADERS:", worksheet.row_values(1))
-    st.write("FIRST 5 RAW ROWS:", worksheet.get_all_values()[:5])
-
     rows = worksheet.get_all_records()
 
     mapping = {}

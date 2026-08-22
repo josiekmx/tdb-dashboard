@@ -9,28 +9,6 @@ from detrack.order_builder import build_delivery_orders
 from detrack.sku_mapping import get_sku_tag_mapping
 from detrack.tag_calculator import calculate_tags
 
-# TEMPORARY: test tag calculation
-orders = get_orders()
-delivery_orders = build_delivery_orders(orders)
-sku_mapping = get_sku_tag_mapping()
-
-# TEMPORARY: inspect Google Sheet SKU mapping
-st.write("F IN MAPPING:", "F" in sku_mapping)
-st.write("F VALUE:", sku_mapping.get("F"))
-st.write("FIRST 20 SKU KEYS:", list(sku_mapping.keys())[:20])
-
-test_order = delivery_orders[0]
-
-total_tags, missing_skus = calculate_tags(
-    test_order,
-    sku_mapping
-)
-
-st.write("ORDER", test_order.order_number)
-st.write("TAGS REQUIRED", total_tags)
-st.write("MISSING SKU MAPPINGS", missing_skus)
-
-
 
 # displays login page to authenticate users
 if not check_password():
