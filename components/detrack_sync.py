@@ -139,12 +139,19 @@ def display_detrack_sync():
         if order.order_number not in existing_detrack_orders
     ]
 
+    # Show upload summary for the selected date
+    st.write(
+        f"Eligible: {len(eligible_orders)} | "
+        f"Already in Detrack: {len(already_uploaded_orders)} | "
+        f"Ready to upload: {len(upload_candidates)}"
+    )
+
     # Only build upload preview when eligible orders exist
-    if eligible_orders:
-        detrack_rows = map_orders_to_detrack(eligible_orders)
+    if upload_candidates:
+        detrack_rows = map_orders_to_detrack(upload_candidates)
         detrack_df = pd.DataFrame(detrack_rows)
 
-    # Hide permanently unused Detrack columns from preview
+        # Hide permanently unused Detrack columns from preview
         preview_columns = [
             "Assign to",
             "Order ID",
@@ -174,14 +181,14 @@ def display_detrack_sync():
         )
 
     else:
-        st.warning(
-            "No orders are currently eligible for Detrack upload."
+        st.info(
+            "No new orders are currently available for Detrack upload."
         )
 
 
     # TEMPORARY: preview one API payload without sending it
-    if eligible_orders:
-        test_order = eligible_orders[0]
+    if upload_candidates:
+        test_order = upload_candidates[0]
 
         test_payload = build_detrack_payload(
             test_order,
@@ -204,10 +211,10 @@ def display_detrack_sync():
             st.error(f"Detrack connection failed: {e}")    
 
     # TEST ONLY: choose one eligible order and upload it to Detrack
-    if eligible_orders:
+    if upload_candidates:
         order_options = {
             order.order_number: order
-            for order in eligible_orders
+            for order in upload_candidates
         }
 
         selected_test_order_number = st.selectbox(
