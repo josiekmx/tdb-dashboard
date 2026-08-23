@@ -143,12 +143,26 @@ def display_detrack_sync():
         if order.order_number not in existing_detrack_orders
     ]
 
-    # Show upload summary for the selected date
-    st.write(
-        f"Eligible: {len(eligible_orders)} | "
-        f"Already in Detrack: {len(already_uploaded_orders)} | "
-        f"Ready to upload: {len(upload_candidates)}"
-    )
+    # Show upload summary as metric cards
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(
+            "Total Orders",
+            len(eligible_orders)
+        )
+
+    with col2:
+        st.metric(
+            "Already in Detrack",
+            len(already_uploaded_orders)
+        )
+
+    with col3:
+        st.metric(
+            "Ready to Upload",
+            len(upload_candidates)
+        )
 
     # Only build upload preview when eligible orders exist
     if upload_candidates:
