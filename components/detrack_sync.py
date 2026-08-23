@@ -164,6 +164,10 @@ def display_detrack_sync():
             display_status = "PENDING"
 
         rows.append({
+            "Issues": ", ".join(
+                order.validation_messages
+            ),
+            "Status": display_status,
             "Order": order.order_number,
             "Type": order.delivery_type,
             "Timeslot": map_timeslot_to_detrack(order),
