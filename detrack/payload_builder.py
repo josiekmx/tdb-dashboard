@@ -34,3 +34,25 @@ def build_detrack_payload(order, timeslot_label):
         # Shopify products
         "items": items,
     }    
+
+# Convert our TDB order into Detrack V1 API format
+def build_detrack_v1_payload(order, timeslot_label):
+    items = []
+
+    for item in order.line_items:
+        items.append({
+            "sku": item.sku,
+            "desc": timeslot_label,
+            "qty": item.quantity,
+        })
+
+    return {
+        "date": order.delivery_date,
+        "do": order.order_number,
+        "address": order.address or "",
+        "delivery_time": timeslot_label,
+        "deliver_to": order.recipient_name or "",
+        "phone": order.recipient_phone or "",
+        "instructions": order.additional_request or "",
+        "items": items,
+    }    

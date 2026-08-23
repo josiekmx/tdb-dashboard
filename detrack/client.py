@@ -27,3 +27,21 @@ def test_detrack_connection(date):
     response.raise_for_status()
 
     return response.json()
+
+# Create Detrack deliveries for one date 
+def create_detrack_delivery(payload):
+    url = "https://app.detrack.com/api/v1/deliveries/create.json"
+
+    response = requests.post(
+        url,
+        headers=get_detrack_headers(),
+
+        # Detrack create endpoint expects an array of deliveries
+        json=[payload],
+
+        timeout=20,
+    )
+
+    response.raise_for_status()
+
+    return response.json()    

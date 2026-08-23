@@ -9,6 +9,8 @@ from detrack.validator import validate_order
 from detrack.mapper import map_timeslot_to_detrack, map_orders_to_detrack
 from detrack.payload_builder import build_detrack_payload
 from detrack.client import test_detrack_connection
+from detrack.payload_builder import build_detrack_v1_payload
+from detrack.client import create_detrack_delivery
 
 
 # Build and validate upcoming unfulfilled Shopify orders for Detrack
@@ -165,3 +167,37 @@ def display_detrack_sync():
 
         except Exception as e:
             st.error(f"Detrack connection failed: {e}")    
+
+    # TEST ONLY: choose one eligible order and upload it to Detrack
+    if eligible_orders:
+        order_options = {
+            order.order_number: order
+            for order in eligible_orders
+        }
+
+        selected_test_order_number = st.selectbox(
+            "Select one order for Detrack test upload",
+            list(order_options.keys())
+        )
+
+        selected_test_order = order_options[selected_test_order_number]
+
+        if st.button(f"Upload Test: {selected_test_order_number}"):
+            try:
+                timeslot_label = map_timeslot_to_detrack(selected_test_order)
+
+                payload = build_detrack_v1_payload(
+                    selected_test_order,
+                    timeslot_label
+                )
+
+                result = create_detrack_delivery(payload)
+
+                st.success(
+                    f"{selected_test_order_number} uploaded to Detrack"
+                )
+
+                st.json(result)
+
+            except Exception as e:
+                st.error(f"Detrack upload failed: {e}")
