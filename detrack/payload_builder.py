@@ -35,10 +35,11 @@ def build_detrack_payload(order, timeslot_label):
         "items": items,
     }    
 
-# Convert our TDB order into Detrack V1 API format
+# Convert one validated TDB order into Detrack V1 API format
 def build_detrack_v1_payload(order, timeslot_label):
     items = []
 
+    # Add every Shopify line item to the Detrack job
     for item in order.line_items:
         items.append({
             "sku": item.sku,
@@ -47,6 +48,7 @@ def build_detrack_v1_payload(order, timeslot_label):
         })
 
     return {
+        # Core Detrack job fields
         "date": order.delivery_date,
         "do": order.order_number,
         "address": order.address or "",
@@ -54,5 +56,17 @@ def build_detrack_v1_payload(order, timeslot_label):
         "deliver_to": order.recipient_name or "",
         "phone": order.recipient_phone or "",
         "instructions": order.additional_request or "",
+
+        # Additional Detrack fields
+        "postal_code": order.postal_code or "",
+        "sender_phone": order.sender_phone or "",
+        "notify_email": order.sender_email or "",
+        "group_name": "The Daily Blooms",
+        "labels": order.number_of_tags,
+
+        # Leave driver assignment blank for now
+        "assign_to": "",
+
+        # Shopify products
         "items": items,
-    }    
+    }
