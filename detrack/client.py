@@ -28,6 +28,18 @@ def test_detrack_connection(date):
 
     return response.json()
 
+# Get order numbers already uploaded to Detrack for one date
+def get_existing_detrack_order_numbers(date):
+    result = test_detrack_connection(date)
+
+    deliveries = result.get("deliveries", [])
+
+    return {
+        delivery.get("do")
+        for delivery in deliveries
+        if delivery.get("do")
+    }
+
 # Create Detrack deliveries for one date 
 def create_detrack_delivery(payload):
     url = "https://app.detrack.com/api/v1/deliveries/create.json"

@@ -8,9 +8,12 @@ from detrack.tag_calculator import calculate_tags
 from detrack.validator import validate_order
 from detrack.mapper import map_timeslot_to_detrack, map_orders_to_detrack
 from detrack.payload_builder import build_detrack_payload
-from detrack.client import test_detrack_connection
 from detrack.payload_builder import build_detrack_v1_payload
-from detrack.client import create_detrack_delivery
+from detrack.client import (
+    test_detrack_connection,
+    create_detrack_delivery,
+    get_existing_detrack_order_numbers,
+)
 
 
 # Build and validate upcoming unfulfilled Shopify orders for Detrack
@@ -109,6 +112,31 @@ def display_detrack_sync():
         order
         for order in date_orders
         if order.validation_status in ["READY", "WARNING"]
+    ]
+
+    # Check which orders already exist in Detrack for the selected date
+    try:
+        existing_detrack_orders = get_existing_detrack_order_numbers(
+            selected_date
+        )
+    except Exception as e:
+        existing_detrack_orders = set()
+
+        st.warning(
+            f"Could not check existing Detrack orders: {e}"
+        )
+
+    # Separate already-uploaded orders from new orders
+    already_uploaded_orders = [
+        order
+        for order in eligible_orders
+        if order.order_number in existing_detrack_orders
+    ]
+
+    upload_candidates = [
+        order
+        for order in eligible_orders
+        if order.order_number not in existing_detrack_orders
     ]
 
     # Only build upload preview when eligible orders exist
