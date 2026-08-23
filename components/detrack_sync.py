@@ -149,21 +149,21 @@ def display_detrack_sync():
     with col1:
         st.metric(
             "Total Orders",
-            len(eligible_orders)
+            len(eligible_orders),
             border=True
         )
 
     with col2:
         st.metric(
             "Already in Detrack",
-            len(already_uploaded_orders)
+            len(already_uploaded_orders),
             border=True
         )
 
     with col3:
         st.metric(
             "Ready to Upload",
-            len(upload_candidates)
+            len(upload_candidates),
             border=True
         )
 
