@@ -6,48 +6,21 @@ from detrack.order_builder import build_delivery_orders
 from detrack.sku_mapping import get_sku_tag_mapping
 from detrack.tag_calculator import calculate_tags
 from detrack.validator import validate_order
-from detrack.mapper import map_timeslot_to_detrack, map_orders_to_detrack
-from detrack.payload_builder import build_detrack_payload
+from detrack.mapper import (
+    map_timeslot_to_detrack,
+    map_orders_to_detrack,
+)
 from detrack.payload_builder import build_detrack_v1_payload
 from detrack.client import (
-    test_detrack_connection,
-    create_detrack_delivery,
     create_detrack_deliveries,
     get_existing_detrack_order_numbers,
 )
 
-# Build order status table
-rows = []
 
-for order in date_orders:
+# ---------------------------------------------------------
+# PREPARE SHOPIFY ORDERS FOR DETRACK
+# ---------------------------------------------------------
 
-    # Uploaded takes priority over validation status
-    if order.order_number in existing_detrack_orders:
-        display_status = "UPLOADED"
-
-    elif order.validation_status == "WARNING":
-        display_status = "WARNING"
-
-    elif order.validation_status == "ERROR":
-        display_status = "ERROR"
-
-    else:
-        display_status = "PENDING"
-
-    rows.append({
-        "Order": order.order_number,
-        "Type": order.delivery_type,
-        "Timeslot": map_timeslot_to_detrack(order),
-        "Recipient": order.recipient_name,
-        "Tags": order.number_of_tags,
-        "Status": display_status,
-        "Issues": ", ".join(order.validation_messages),
-    })
-
-df = pd.DataFrame(rows)
-
-
-# Build and validate upcoming unfulfilled Shopify orders for Detrack
 def prepare_detrack_orders():
     orders = get_orders()
 
@@ -72,7 +45,9 @@ def prepare_detrack_orders():
         validate_order(order, missing_skus)
 
     # Only keep delivery / pickup dates from today onwards
-    today = pd.Timestamp.now(tz="Asia/Singapore").date()
+    today = pd.Timestamp.now(
+        tz="Asia/Singapore"
+    ).date()
 
     delivery_orders = [
         order
@@ -84,7 +59,10 @@ def prepare_detrack_orders():
     return delivery_orders
 
 
-# Style Detrack order statuses
+# ---------------------------------------------------------
+# STATUS DISPLAY
+# ---------------------------------------------------------
+
 def style_status(value):
     styles = {
         "PENDING": (
@@ -111,7 +89,11 @@ def style_status(value):
 
     return styles.get(value, "")
 
-# Display Detrack orders by selected delivery / pickup date
+
+# ---------------------------------------------------------
+# DETRACK SYNC PAGE
+# ---------------------------------------------------------
+
 def display_detrack_sync():
     st.subheader("Detrack Sync")
 
@@ -141,22 +123,61 @@ def display_detrack_sync():
         if order.delivery_date == selected_date
     ]
 
+    # ---------------------------------------------------------
+    # CHECK EXISTING DETRACK ORDERS
+    # ---------------------------------------------------------
+
+    try:
+        existing_detrack_orders = (
+            get_existing_detrack_order_numbers(
+                selected_date
+            )
+        )
+
+    except Exception as e:
+        existing_detrack_orders = set()
+
+        st.warning(
+            f"Could not check existing Detrack orders: {e}"
+        )
+
+    # ---------------------------------------------------------
+    # ORDER STATUS TABLE
+    # ---------------------------------------------------------
+
     rows = []
 
-    # Build Detrack preview
     for order in date_orders:
+
+        # Uploaded takes priority over validation status
+        if order.order_number in existing_detrack_orders:
+            display_status = "UPLOADED"
+
+        elif order.validation_status == "ERROR":
+            display_status = "ERROR"
+
+        elif order.validation_status == "WARNING":
+            display_status = "WARNING"
+
+        else:
+            # READY internally = PENDING upload in the UI
+            display_status = "PENDING"
+
         rows.append({
             "Order": order.order_number,
             "Type": order.delivery_type,
             "Timeslot": map_timeslot_to_detrack(order),
             "Recipient": order.recipient_name,
             "Tags": order.number_of_tags,
-            "Status": order.validation_status,
-            "Issues": ", ".join(order.validation_messages),
+            "Status": display_status,
+            "Issues": ", ".join(
+                order.validation_messages
+            ),
         })
 
     df = pd.DataFrame(rows)
 
+    # Apply colour styling to Status column
     styled_df = df.style.map(
         style_status,
         subset=["Status"]
@@ -168,44 +189,40 @@ def display_detrack_sync():
         hide_index=True
     )
 
-    # Preview only READY and WARNING orders that are eligible for Detrack upload
-     # ---------------------------------------------------------
-    # Detrack Upload Preview
     # ---------------------------------------------------------
+    # DETRACK UPLOAD PREVIEW
+    # ---------------------------------------------------------
+
     st.subheader("Detrack Upload Preview")
 
+    # READY and WARNING orders are eligible for upload
     eligible_orders = [
         order
         for order in date_orders
-        if order.validation_status in ["READY", "WARNING"]
+        if order.validation_status in [
+            "READY",
+            "WARNING"
+        ]
     ]
 
-    # Check which orders already exist in Detrack for the selected date
-    try:
-        existing_detrack_orders = get_existing_detrack_order_numbers(
-            selected_date
-        )
-    except Exception as e:
-        existing_detrack_orders = set()
-
-        st.warning(
-            f"Could not check existing Detrack orders: {e}"
-        )
-
-    # Separate already-uploaded orders from new orders
+    # Orders already found in Detrack
     already_uploaded_orders = [
         order
         for order in eligible_orders
         if order.order_number in existing_detrack_orders
     ]
 
+    # Orders that have not yet been uploaded
     upload_candidates = [
         order
         for order in eligible_orders
         if order.order_number not in existing_detrack_orders
     ]
 
-    # Show upload summary as metric cards
+    # ---------------------------------------------------------
+    # UPLOAD SUMMARY
+    # ---------------------------------------------------------
+
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -229,12 +246,20 @@ def display_detrack_sync():
             border=True
         )
 
-    # Only build upload preview when eligible orders exist
-    if upload_candidates:
-        detrack_rows = map_orders_to_detrack(upload_candidates)
-        detrack_df = pd.DataFrame(detrack_rows)
+    # ---------------------------------------------------------
+    # UPLOAD PREVIEW TABLE
+    # ---------------------------------------------------------
 
-        # Hide permanently unused Detrack columns from preview
+    if upload_candidates:
+        detrack_rows = map_orders_to_detrack(
+            upload_candidates
+        )
+
+        detrack_df = pd.DataFrame(
+            detrack_rows
+        )
+
+        # Only show useful Detrack columns
         preview_columns = [
             "Assign to",
             "Order ID",
@@ -255,7 +280,9 @@ def display_detrack_sync():
             "Quantity",
         ]
 
-        detrack_preview_df = detrack_df[preview_columns]
+        detrack_preview_df = detrack_df[
+            preview_columns
+        ]
 
         st.dataframe(
             detrack_preview_df,
@@ -265,12 +292,12 @@ def display_detrack_sync():
 
     else:
         st.info(
-            "No new orders are currently available for Detrack upload."
+            "No new orders are currently available "
+            "for Detrack upload."
         )
 
-
     # ---------------------------------------------------------
-    # UPLOAD BUTTON - BATCH UPLOAD: ALL NEW ORDERS FOR SELECTED DATE
+    # BATCH UPLOAD
     # ---------------------------------------------------------
 
     if upload_candidates:
@@ -278,7 +305,9 @@ def display_detrack_sync():
 
         # Build one Detrack payload per order
         for order in upload_candidates:
-            timeslot_label = map_timeslot_to_detrack(order)
+            timeslot_label = (
+                map_timeslot_to_detrack(order)
+            )
 
             payload = build_detrack_v1_payload(
                 order,
@@ -290,11 +319,13 @@ def display_detrack_sync():
         st.subheader("Upload to Detrack")
 
         st.write(
-            f"{len(batch_payloads)} new order(s) ready to upload."
+            f"{len(batch_payloads)} new order(s) "
+            f"ready to upload."
         )
 
         if st.button(
-            f"Upload {len(batch_payloads)} New Orders to Detrack",
+            f"Upload {len(batch_payloads)} "
+            f"New Orders to Detrack",
             type="primary"
         ):
             try:
@@ -315,13 +346,14 @@ def display_detrack_sync():
                     st.write(
                         f"Batch {batch_number}"
                     )
+
                     st.json(result)
 
-                # Refresh so newly uploaded orders are detected
-                # by the duplicate checker
+                # Rerun so newly uploaded orders
+                # immediately change to UPLOADED
                 st.rerun()
 
             except Exception as e:
                 st.error(
                     f"Detrack batch upload failed: {e}"
-                )            
+                )
