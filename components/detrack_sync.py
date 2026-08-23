@@ -8,6 +8,7 @@ from detrack.tag_calculator import calculate_tags
 from detrack.validator import validate_order
 from detrack.mapper import map_timeslot_to_detrack, map_orders_to_detrack
 from detrack.payload_builder import build_detrack_payload
+from detrack.client import test_detrack_connection
 
 
 # Build and validate upcoming unfulfilled Shopify orders for Detrack
@@ -152,3 +153,15 @@ def display_detrack_sync():
 
         st.subheader("API Payload Test")
         st.json(test_payload)
+
+
+    # TEMPORARY: test Detrack API authentication without creating jobs
+    if st.button("Test Detrack Connection"):
+        try:
+            result = test_detrack_connection(selected_date)
+
+            st.success("Detrack connection successful")
+            st.write(result)
+
+        except Exception as e:
+            st.error(f"Detrack connection failed: {e}")    
