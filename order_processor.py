@@ -231,6 +231,8 @@ def process_orders():
         
 
         processed_rows.append({
+            "Assignee": assignee,
+            "Completed": completed,
             "Shopify ID": shopify_id,
             "Order": order_id,
             "SKU": main_sku,
@@ -242,9 +244,8 @@ def process_orders():
             "Scent": scent,
             "Delivery Slot": delivery_slot,
             "Delivery Date": delivery_date,
-            "Delivery Type": delivery_type,
-            "Assignee": assignee,
-            "Completed": completed
+            "Delivery Type": delivery_type
+        
             
         })
 
