@@ -27,8 +27,15 @@ st.set_page_config(
     layout="wide"
 )
 
-# dashboard header
-st.header("The Daily Blooms Dashboard")
+# Dashboard header with refresh button on the right
+header_col, refresh_col = st.columns([8, 1])
+
+with header_col:
+    st.header("The Daily Blooms Dashboard")
+
+with refresh_col:
+    if st.button("Refresh", use_container_width=True):
+        st.rerun()
 
 # Main dashboard sections
 orders_tab, detrack_tab = st.tabs([
