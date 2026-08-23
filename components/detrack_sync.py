@@ -107,6 +107,9 @@ def display_detrack_sync():
     )
 
     # Preview only READY and WARNING orders that are eligible for Detrack upload
+     # ---------------------------------------------------------
+    # Detrack Upload Preview
+    # ---------------------------------------------------------
     st.subheader("Detrack Upload Preview")
 
     eligible_orders = [
@@ -187,66 +190,8 @@ def display_detrack_sync():
         )
 
 
-    # TEMPORARY: preview one API payload without sending it
-    if upload_candidates:
-        test_order = upload_candidates[0]
-
-        test_payload = build_detrack_payload(
-            test_order,
-            map_timeslot_to_detrack(test_order)
-        )
-
-        st.subheader("API Payload Test")
-        st.json(test_payload)
-
-
-    # TEMPORARY: test Detrack API authentication without creating jobs
-    if st.button("Test Detrack Connection"):
-        try:
-            result = test_detrack_connection(selected_date)
-
-            st.success("Detrack connection successful")
-            st.write(result)
-
-        except Exception as e:
-            st.error(f"Detrack connection failed: {e}")    
-
-    # TEST ONLY: choose one eligible order and upload it to Detrack
-    if upload_candidates:
-        order_options = {
-            order.order_number: order
-            for order in upload_candidates
-        }
-
-        selected_test_order_number = st.selectbox(
-            "Select one order for Detrack test upload",
-            list(order_options.keys())
-        )
-
-        selected_test_order = order_options[selected_test_order_number]
-
-        if st.button(f"Upload Test: {selected_test_order_number}"):
-            try:
-                timeslot_label = map_timeslot_to_detrack(selected_test_order)
-
-                payload = build_detrack_v1_payload(
-                    selected_test_order,
-                    timeslot_label
-                )
-
-                result = create_detrack_delivery(payload)
-
-                st.success(
-                    f"{selected_test_order_number} uploaded to Detrack"
-                )
-
-                st.json(result)
-
-            except Exception as e:
-                st.error(f"Detrack upload failed: {e}")
-
     # ---------------------------------------------------------
-    # BATCH UPLOAD: ALL NEW ORDERS FOR SELECTED DATE
+    # UPLOAD BUTTON - BATCH UPLOAD: ALL NEW ORDERS FOR SELECTED DATE
     # ---------------------------------------------------------
 
     if upload_candidates:
