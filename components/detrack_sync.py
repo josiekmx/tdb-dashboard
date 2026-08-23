@@ -12,6 +12,7 @@ from detrack.payload_builder import build_detrack_v1_payload
 from detrack.client import (
     test_detrack_connection,
     create_detrack_delivery,
+    create_detrack_deliveries,
     get_existing_detrack_order_numbers,
 )
 
@@ -243,3 +244,60 @@ def display_detrack_sync():
 
             except Exception as e:
                 st.error(f"Detrack upload failed: {e}")
+
+    # ---------------------------------------------------------
+    # BATCH UPLOAD: ALL NEW ORDERS FOR SELECTED DATE
+    # ---------------------------------------------------------
+
+    if upload_candidates:
+        batch_payloads = []
+
+        # Build one Detrack payload per order
+        for order in upload_candidates:
+            timeslot_label = map_timeslot_to_detrack(order)
+
+            payload = build_detrack_v1_payload(
+                order,
+                timeslot_label
+            )
+
+            batch_payloads.append(payload)
+
+        st.subheader("Upload to Detrack")
+
+        st.write(
+            f"{len(batch_payloads)} new order(s) ready to upload."
+        )
+
+        if st.button(
+            f"Upload {len(batch_payloads)} New Orders to Detrack",
+            type="primary"
+        ):
+            try:
+                results = create_detrack_deliveries(
+                    batch_payloads
+                )
+
+                st.success(
+                    f"Upload completed for "
+                    f"{len(batch_payloads)} order(s)."
+                )
+
+                # Show Detrack response for each batch
+                for batch_number, result in enumerate(
+                    results,
+                    start=1
+                ):
+                    st.write(
+                        f"Batch {batch_number}"
+                    )
+                    st.json(result)
+
+                # Refresh so newly uploaded orders are detected
+                # by the duplicate checker
+                st.rerun()
+
+            except Exception as e:
+                st.error(
+                    f"Detrack batch upload failed: {e}"
+                )            
