@@ -81,28 +81,34 @@ def standardise_date(date_str):
 
 
 def get_delivery_slot(order, item):
-    tags = order["tags"]
+    tags = order.get("tags", "")
 
-    # Pickup: show the actual selected pickup time window
+    # Pickup: current Shopify tag is source of truth
     if "pickup" in tags.lower() or "pick up" in tags.lower():
-        pickup_timeslot = get_pickup_timeslot(item)
+        pickup_slots = [
+            "9:00 AM - 12:00 PM",
+            "12:00 PM - 3:00 PM",
+            "3:00 PM - 5:00 PM",
+            "5:00 PM - 9:00 PM",
+        ]
 
-        if pickup_timeslot:
-            return f"Pick up {pickup_timeslot}"
+        for timeslot in pickup_slots:
+            if timeslot in tags:
+                return f"Pick up {timeslot}"
 
         return "Pick up"
 
-    # Delivery: use the current timeslot from Shopify tags
-    if "9:00 AM - 2:00 PM" in tags:
-        return "9:00 AM - 2:00 PM"
+    # Delivery: current Shopify tag is source of truth
+    delivery_slots = [
+        "9:00 AM - 2:00 PM",
+        "1:00 PM - 6:00 PM",
+        "5:00 PM - 10:00 PM",
+    ]
 
-    elif "1:00 PM - 6:00 PM" in tags:
-        return "1:00 PM - 6:00 PM"
+    for timeslot in delivery_slots:
+        if timeslot in tags:
+            return timeslot
 
-    elif "5:00 PM - 10:00 PM" in tags:
-        return "5:00 PM - 10:00 PM"
-
-    # Irregular category
     return "Custom Time"
 
 # updates addon item information accurately with
