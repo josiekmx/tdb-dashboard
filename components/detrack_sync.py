@@ -7,6 +7,7 @@ from detrack.sku_mapping import get_sku_tag_mapping
 from detrack.tag_calculator import calculate_tags
 from detrack.validator import validate_order
 from detrack.mapper import map_timeslot_to_detrack, map_orders_to_detrack
+from detrack.payload_builder import build_detrack_payload
 
 
 # Build and validate upcoming unfulfilled Shopify orders for Detrack
@@ -138,3 +139,16 @@ def display_detrack_sync():
         use_container_width=True,
         hide_index=True
     )
+
+
+    # TEMPORARY: preview one API payload without sending it
+    if eligible_orders:
+        test_order = eligible_orders[0]
+
+        test_payload = build_detrack_payload(
+            test_order,
+            map_timeslot_to_detrack(test_order)
+        )
+
+        st.subheader("API Payload Test")
+        st.json(test_payload)
