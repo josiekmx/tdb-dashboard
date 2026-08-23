@@ -62,10 +62,6 @@ with detrack_tab:
     #st.session_state.selected_slots = []
     #st.rerun()
 
-# Refresh dashboard data without modifying active widget state
-if st.button("Refresh"):
-    st.rerun()
-
 # insert empty space to optimise ui
 st.markdown("<br>", unsafe_allow_html=True)
 
