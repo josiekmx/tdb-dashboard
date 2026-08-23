@@ -48,23 +48,26 @@ def build_detrack_v1_payload(order, timeslot_label):
         })
 
     return {
-        # Core Detrack job fields
+        # Core Detrack fields
         "date": order.delivery_date,
         "do": order.order_number,
         "address": order.address or "",
         "delivery_time": timeslot_label,
         "deliver_to": order.recipient_name or "",
         "phone": order.recipient_phone or "",
+        "notify_email": order.sender_email or "",
         "instructions": order.additional_request or "",
 
         # Additional Detrack fields
+        "time_slot": timeslot_label,
+        "addr_1": order.address or "",
         "postal_code": order.postal_code or "",
         "sender_phone": order.sender_phone or "",
-        "notify_email": order.sender_email or "",
+        "o_name": order.sender_name or "",
         "group_name": "The Daily Blooms",
         "labels": order.number_of_tags,
 
-        # Leave driver assignment blank for now
+        # Driver assignment - blank until assigned
         "assign_to": "",
 
         # Shopify products
