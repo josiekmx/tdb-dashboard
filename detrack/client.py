@@ -57,3 +57,27 @@ def create_detrack_delivery(payload):
     response.raise_for_status()
 
     return response.json()    
+
+
+# Upload multiple deliveries to Detrack in batches of up to 100
+def create_detrack_deliveries(payloads):
+    url = "https://app.detrack.com/api/v1/deliveries/create.json"
+
+    batch_size = 100
+    results = []
+
+    for i in range(0, len(payloads), batch_size):
+        batch = payloads[i:i + batch_size]
+
+        response = requests.post(
+            url,
+            headers=get_detrack_headers(),
+            json=batch,
+            timeout=30,
+        )
+
+        response.raise_for_status()
+
+        results.append(response.json())
+
+    return results    
