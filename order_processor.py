@@ -81,18 +81,35 @@ def standardise_date(date_str):
 
 
 def get_delivery_slot(order, item):
-    # search for delivery or pickup timeslot within given tags
-    if "9:00 AM - 2:00 PM" in order["tags"]:
-        return "9:00 AM - 2:00 PM"
-    elif "1:00 PM - 6:00 PM" in order["tags"]:
-        return "1:00 PM - 6:00 PM"
-    elif "5:00 PM - 10:00 PM" in order["tags"]:
-        return "5:00 PM - 10:00 PM"
-    elif "pickup" in order["tags"].lower() or "pick up" in order["tags"].lower():
+    tags = order.get("tags", "")
+
+    # Pickup: current Shopify tag is source of truth
+    if "pickup" in tags.lower() or "pick up" in tags.lower():
+        pickup_slots = [
+            "9:00 AM - 12:00 PM",
+            "12:00 PM - 3:00 PM",
+            "3:00 PM - 5:00 PM",
+            "5:00 PM - 9:00 PM",
+        ]
+
+        for timeslot in pickup_slots:
+            if timeslot in tags:
+                return f"Pick up {timeslot}"
+
         return "Pick up"
-    else:
-        # irregular category
-        return "Custom Time"
+
+    # Delivery: current Shopify tag is source of truth
+    delivery_slots = [
+        "9:00 AM - 2:00 PM",
+        "1:00 PM - 6:00 PM",
+        "5:00 PM - 10:00 PM",
+    ]
+
+    for timeslot in delivery_slots:
+        if timeslot in tags:
+            return timeslot
+
+    return "Custom Time"
 
 # updates addon item information accurately with
 # understanding of the sku name
@@ -127,7 +144,20 @@ def get_delivery_type(order, item):
     if "pickup" in order["tags"].lower() or "pick up" in order["tags"].lower():
         delivery_type = "Pickup"
     return delivery_type
-    
+
+# Get the customer's selected pickup time window from line item properties
+def get_pickup_timeslot(item):
+    for prop in item.get("properties", []):
+        if prop.get("name") in [
+            "Pickup Timeslot Weekday",
+            "Pickup Timeslot Weekend",
+        ]:
+            value = prop.get("value")
+
+            if value:
+                return value
+
+    return None    
 
 # main function to process orders
 def process_orders():
@@ -207,9 +237,9 @@ def process_orders():
         
 
         processed_rows.append({
-            "Shopify ID": shopify_id,
-            "Completed": completed,
             "Assignee": assignee,
+            "Completed": completed,
+            "Shopify ID": shopify_id,
             "Order": order_id,
             "SKU": main_sku,
             "Custom Details": custom_details,
@@ -221,7 +251,7 @@ def process_orders():
             "Delivery Slot": delivery_slot,
             "Delivery Date": delivery_date,
             "Delivery Type": delivery_type
-           
+        
             
         })
 
