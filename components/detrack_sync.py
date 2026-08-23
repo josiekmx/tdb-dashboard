@@ -16,6 +16,36 @@ from detrack.client import (
     get_existing_detrack_order_numbers,
 )
 
+# Build order status table
+rows = []
+
+for order in date_orders:
+
+    # Uploaded takes priority over validation status
+    if order.order_number in existing_detrack_orders:
+        display_status = "UPLOADED"
+
+    elif order.validation_status == "WARNING":
+        display_status = "WARNING"
+
+    elif order.validation_status == "ERROR":
+        display_status = "ERROR"
+
+    else:
+        display_status = "PENDING"
+
+    rows.append({
+        "Order": order.order_number,
+        "Type": order.delivery_type,
+        "Timeslot": map_timeslot_to_detrack(order),
+        "Recipient": order.recipient_name,
+        "Tags": order.number_of_tags,
+        "Status": display_status,
+        "Issues": ", ".join(order.validation_messages),
+    })
+
+df = pd.DataFrame(rows)
+
 
 # Build and validate upcoming unfulfilled Shopify orders for Detrack
 def prepare_detrack_orders():
@@ -53,6 +83,33 @@ def prepare_detrack_orders():
 
     return delivery_orders
 
+
+# Style Detrack order statuses
+def style_status(value):
+    styles = {
+        "PENDING": (
+            "background-color: #DCEEFF; "
+            "color: #2F6FA5; "
+            "font-weight: 600;"
+        ),
+        "WARNING": (
+            "background-color: #FFF3CD; "
+            "color: #856404; "
+            "font-weight: 600;"
+        ),
+        "ERROR": (
+            "background-color: #F8D7DA; "
+            "color: #A94442; "
+            "font-weight: 600;"
+        ),
+        "UPLOADED": (
+            "background-color: #DDF2E1; "
+            "color: #2E7D45; "
+            "font-weight: 600;"
+        ),
+    }
+
+    return styles.get(value, "")
 
 # Display Detrack orders by selected delivery / pickup date
 def display_detrack_sync():
@@ -100,8 +157,13 @@ def display_detrack_sync():
 
     df = pd.DataFrame(rows)
 
+    styled_df = df.style.map(
+        style_status,
+        subset=["Status"]
+    )
+
     st.dataframe(
-        df,
+        styled_df,
         use_container_width=True,
         hide_index=True
     )
