@@ -49,10 +49,14 @@ with detrack_tab:
 # enables refresh
 # upon refresh, the date and timeslots will return to 
 # default state of the earliest date and all timeslots respectively. 
-if st.button("Refresh"):
+#if st.button("Refresh"):
     # Reset filters
-    st.session_state.selected_date = None
-    st.session_state.selected_slots = []
+    #st.session_state.selected_date = None
+    #st.session_state.selected_slots = []
+    #st.rerun()
+
+# Refresh dashboard data without modifying active widget state
+if st.button("Refresh"):
     st.rerun()
 
 # insert empty space to optimise ui
