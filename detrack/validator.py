@@ -40,17 +40,25 @@ def validate_order(delivery_order, missing_skus):
 
     # Every SKU must have a tag mapping
     if missing_skus:
-        errors.append(
+        warnings.append(
             "Missing SKU tag mapping: " + ", ".join(missing_skus)
-        )
+    )
 
     # Determine final validation status
     if errors:
-        status = "ERROR"
+        order.validation_status = "ERROR"
+        order.validation_messages = errors + warnings
+
     elif warnings:
-        status = "WARNING"
+        order.validation_status = "WARNING"
+        order.validation_messages = warnings
+
     else:
-        status = "READY"
+        order.validation_status = "READY"
+        order.validation_messages = []
+
+    return order
+
 
     delivery_order.validation_status = status
     delivery_order.validation_messages = errors + warnings

@@ -2,15 +2,23 @@ import pandas as pd
 import streamlit as st
 
 from shopify_client import get_orders
+
 from detrack.order_builder import build_delivery_orders
 from detrack.sku_mapping import get_sku_tag_mapping
 from detrack.tag_calculator import calculate_tags
 from detrack.validator import validate_order
-from detrack.mapper import map_timeslot_to_detrack, map_orders_to_detrack
-from detrack.payload_builder import build_detrack_payload
-from detrack.client import test_detrack_connection
-from detrack.payload_builder import build_detrack_v1_payload
-from detrack.client import create_detrack_delivery
+from detrack.mapper import (
+    map_timeslot_to_detrack,
+    map_orders_to_detrack,
+)
+from detrack.payload_builder import (
+    build_detrack_payload,
+    build_detrack_v1_payload,
+)
+from detrack.client import (
+    test_detrack_connection,
+    create_detrack_delivery,
+)
 
 
 # Build and validate upcoming unfulfilled Shopify orders for Detrack
@@ -31,7 +39,7 @@ def prepare_detrack_orders():
     for order in delivery_orders:
         total_tags, missing_skus = calculate_tags(
             order,
-            sku_mapping
+            sku_mapping,
         )
 
         order.number_of_tags = total_tags
@@ -70,7 +78,7 @@ def display_detrack_sync():
     # Select which date to prepare for Detrack
     selected_date = st.selectbox(
         "Delivery / Pickup Date",
-        available_dates
+        available_dates,
     )
 
     # Keep only orders for selected date
@@ -80,9 +88,12 @@ def display_detrack_sync():
         if order.delivery_date == selected_date
     ]
 
+    # ---------------------------------------------------------
+    # ORDER VALIDATION PREVIEW
+    # ---------------------------------------------------------
+
     rows = []
 
-    # Build Detrack preview
     for order in date_orders:
         rows.append({
             "Order": order.order_number,
@@ -99,76 +110,95 @@ def display_detrack_sync():
     st.dataframe(
         df,
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
     )
 
-    # Preview only READY and WARNING orders that are eligible for Detrack upload
+    # ---------------------------------------------------------
+    # DETRACK UPLOAD PREVIEW
+    # ---------------------------------------------------------
+
     st.subheader("Detrack Upload Preview")
 
+    # Only READY and WARNING orders are eligible for upload
     eligible_orders = [
         order
         for order in date_orders
         if order.validation_status in ["READY", "WARNING"]
     ]
 
-    detrack_rows = map_orders_to_detrack(eligible_orders)
-    detrack_df = pd.DataFrame(detrack_rows)
+    if eligible_orders:
+        detrack_rows = map_orders_to_detrack(eligible_orders)
+        detrack_df = pd.DataFrame(detrack_rows)
 
-    # Hide permanently unused Detrack columns from preview
-    preview_columns = [
-        "Assign to",
-        "Order ID",
-        "Delivery Date",
-        "Delivery Timeslot",
-        "Delivery Address",
-        "Postal Code",
-        "Recipient's Name",
-        "Recipient Number",
-        "Sender's Contact",
-        "Notes",
-        "Sender Email",
-        "Sender Name",
-        "Group",
-        "No. of tags",
-        "SKU",
-        "Item Description",
-        "Quantity",
-    ]
+        # Only show Detrack fields that we actually use
+        preview_columns = [
+            "Assign to",
+            "Order ID",
+            "Delivery Date",
+            "Delivery Timeslot",
+            "Delivery Address",
+            "Postal Code",
+            "Recipient's Name",
+            "Recipient Number",
+            "Sender's Contact",
+            "Notes",
+            "Sender Email",
+            "Sender Name",
+            "Group",
+            "No. of tags",
+            "SKU",
+            "Item Description",
+            "Quantity",
+        ]
 
-    detrack_preview_df = detrack_df[preview_columns]
+        detrack_preview_df = detrack_df[preview_columns]
 
-    st.dataframe(
-        detrack_preview_df,
-        use_container_width=True,
-        hide_index=True
-    )
+        st.dataframe(
+            detrack_preview_df,
+            use_container_width=True,
+            hide_index=True,
+        )
 
+    else:
+        st.warning(
+            "No orders are currently eligible for Detrack upload."
+        )
 
-    # TEMPORARY: preview one API payload without sending it
+    # ---------------------------------------------------------
+    # TEMPORARY: API PAYLOAD PREVIEW
+    # ---------------------------------------------------------
+
     if eligible_orders:
         test_order = eligible_orders[0]
 
         test_payload = build_detrack_payload(
             test_order,
-            map_timeslot_to_detrack(test_order)
+            map_timeslot_to_detrack(test_order),
         )
 
         st.subheader("API Payload Test")
         st.json(test_payload)
 
+    # ---------------------------------------------------------
+    # TEMPORARY: DETRACK CONNECTION TEST
+    # ---------------------------------------------------------
 
-    # TEMPORARY: test Detrack API authentication without creating jobs
     if st.button("Test Detrack Connection"):
         try:
             result = test_detrack_connection(selected_date)
 
             st.success("Detrack connection successful")
-            st.write(result)
+            st.json(result)
 
         except Exception as e:
-            st.error(f"Detrack connection failed: {e}")    
+            st.error(
+                f"Detrack connection failed: {e}"
+            )
 
-    # TEST ONLY: choose one eligible order and upload it to Detrack
+    # ---------------------------------------------------------
+    # TEST ONLY: SINGLE ORDER UPLOAD
+    # ---------------------------------------------------------
+
     if eligible_orders:
         order_options = {
             order.order_number: order
@@ -177,27 +207,36 @@ def display_detrack_sync():
 
         selected_test_order_number = st.selectbox(
             "Select one order for Detrack test upload",
-            list(order_options.keys())
+            list(order_options.keys()),
         )
 
-        selected_test_order = order_options[selected_test_order_number]
+        selected_test_order = order_options[
+            selected_test_order_number
+        ]
 
-        if st.button(f"Upload Test: {selected_test_order_number}"):
+        if st.button(
+            f"Upload Test: {selected_test_order_number}"
+        ):
             try:
-                timeslot_label = map_timeslot_to_detrack(selected_test_order)
+                timeslot_label = map_timeslot_to_detrack(
+                    selected_test_order
+                )
 
                 payload = build_detrack_v1_payload(
                     selected_test_order,
-                    timeslot_label
+                    timeslot_label,
                 )
 
                 result = create_detrack_delivery(payload)
 
                 st.success(
-                    f"{selected_test_order_number} uploaded to Detrack"
+                    f"{selected_test_order_number} "
+                    "uploaded to Detrack"
                 )
 
                 st.json(result)
 
             except Exception as e:
-                st.error(f"Detrack upload failed: {e}")
+                st.error(
+                    f"Detrack upload failed: {e}"
+                )
