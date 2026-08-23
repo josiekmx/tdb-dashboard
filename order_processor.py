@@ -81,18 +81,29 @@ def standardise_date(date_str):
 
 
 def get_delivery_slot(order, item):
-    # search for delivery or pickup timeslot within given tags
-    if "9:00 AM - 2:00 PM" in order["tags"]:
-        return "9:00 AM - 2:00 PM"
-    elif "1:00 PM - 6:00 PM" in order["tags"]:
-        return "1:00 PM - 6:00 PM"
-    elif "5:00 PM - 10:00 PM" in order["tags"]:
-        return "5:00 PM - 10:00 PM"
-    elif "pickup" in order["tags"].lower() or "pick up" in order["tags"].lower():
+    tags = order["tags"]
+
+    # Pickup: show the actual selected pickup time window
+    if "pickup" in tags.lower() or "pick up" in tags.lower():
+        pickup_timeslot = get_pickup_timeslot(item)
+
+        if pickup_timeslot:
+            return f"Pick up {pickup_timeslot}"
+
         return "Pick up"
-    else:
-        # irregular category
-        return "Custom Time"
+
+    # Delivery: use the current timeslot from Shopify tags
+    if "9:00 AM - 2:00 PM" in tags:
+        return "9:00 AM - 2:00 PM"
+
+    elif "1:00 PM - 6:00 PM" in tags:
+        return "1:00 PM - 6:00 PM"
+
+    elif "5:00 PM - 10:00 PM" in tags:
+        return "5:00 PM - 10:00 PM"
+
+    # Irregular category
+    return "Custom Time"
 
 # updates addon item information accurately with
 # understanding of the sku name
@@ -127,7 +138,20 @@ def get_delivery_type(order, item):
     if "pickup" in order["tags"].lower() or "pick up" in order["tags"].lower():
         delivery_type = "Pickup"
     return delivery_type
-    
+
+# Get the customer's selected pickup time window from line item properties
+def get_pickup_timeslot(item):
+    for prop in item.get("properties", []):
+        if prop.get("name") in [
+            "Pickup Timeslot Weekday",
+            "Pickup Timeslot Weekend",
+        ]:
+            value = prop.get("value")
+
+            if value:
+                return value
+
+    return None    
 
 # main function to process orders
 def process_orders():
@@ -207,9 +231,9 @@ def process_orders():
         
 
         processed_rows.append({
-            "Shopify ID": shopify_id,
-            "Completed": completed,
             "Assignee": assignee,
+            "Completed": completed,
+            "Shopify ID": shopify_id,
             "Order": order_id,
             "SKU": main_sku,
             "Custom Details": custom_details,
@@ -221,7 +245,7 @@ def process_orders():
             "Delivery Slot": delivery_slot,
             "Delivery Date": delivery_date,
             "Delivery Type": delivery_type
-           
+        
             
         })
 
