@@ -9,6 +9,159 @@ from shopify_client import (
 )
 
 
+# ---------------------------------------------------------
+# TIMESLOT SUMMARY
+# ---------------------------------------------------------
+
+# Display unfulfilled order counts by AM / PM / NIGHT
+# Display unfulfilled order counts by AM / PM / NIGHT
+def display_timeslot_summary(df, selected_date):
+    date_orders = df[
+        df["Delivery Date"] == selected_date
+    ]
+
+    slot_groups = {
+        "AM": {
+            "delivery": ["9:00 AM - 2:00 PM"],
+            "pickup": ["Pick up 9:00 AM - 12:00 PM"],
+        },
+        "PM": {
+            "delivery": ["1:00 PM - 6:00 PM"],
+            "pickup": [
+                "Pick up 12:00 PM - 3:00 PM",
+                "Pick up 3:00 PM - 5:00 PM",
+            ],
+        },
+        "NIGHT": {
+            "delivery": ["5:00 PM - 10:00 PM"],
+            "pickup": ["Pick up 5:00 PM - 9:00 PM"],
+        },
+    }
+
+    cards = ""
+
+    for label, slots in slot_groups.items():
+        delivery_count = date_orders[
+            (date_orders["Delivery Type"] == "Delivery")
+            & date_orders["Delivery Slot"].isin(
+                slots["delivery"]
+            )
+        ]["Order"].nunique()
+
+        pickup_count = date_orders[
+            (date_orders["Delivery Type"] == "Pickup")
+            & date_orders["Delivery Slot"].isin(
+                slots["pickup"]
+            )
+        ]["Order"].nunique()
+
+        total_count = (
+            delivery_count
+            + pickup_count
+        )
+
+        cards += (
+            f'<div class="timeslot-card">'
+            f'<div class="timeslot-title">{label} Unfulfilled</div>'
+            f'<div class="timeslot-total">{total_count}</div>'
+            f'<div class="timeslot-breakdown">'
+            f'<div>'
+            f'<div class="timeslot-label">Delivery</div>'
+            f'<div class="timeslot-count">{delivery_count}</div>'
+            f'</div>'
+            f'<div>'
+            f'<div class="timeslot-label">Pick Up</div>'
+            f'<div class="timeslot-count">{pickup_count}</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>'
+        )
+
+    summary_html = f"""
+<style>
+.timeslot-grid {{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+    margin-bottom: 24px;
+}}
+
+.timeslot-card {{
+    border: 1px solid #ddd8d2;
+    border-radius: 12px;
+    padding: 14px 18px;
+    min-width: 0;
+}}
+
+.timeslot-title {{
+    font-size: 15px;
+    margin-bottom: 3px;
+}}
+
+.timeslot-total {{
+    font-size: 32px;
+    line-height: 1.15;
+    margin-bottom: 12px;
+}}
+
+.timeslot-breakdown {{
+    display: flex;
+    gap: 28px;
+}}
+
+.timeslot-label {{
+    font-size: 12px;
+    opacity: 0.6;
+}}
+
+.timeslot-count {{
+    font-size: 19px;
+    font-weight: 600;
+}}
+
+/* Mobile */
+@media (max-width: 640px) {{
+    .timeslot-grid {{
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }}
+
+    .timeslot-card {{
+        padding: 12px 16px;
+    }}
+
+    .timeslot-title {{
+        font-size: 14px;
+    }}
+
+    .timeslot-total {{
+        font-size: 28px;
+        margin-bottom: 8px;
+    }}
+
+    .timeslot-breakdown {{
+        gap: 36px;
+    }}
+
+    .timeslot-count {{
+        font-size: 18px;
+    }}
+}}
+</style>
+
+<div class="timeslot-grid">{cards}</div>
+"""
+
+    st.markdown(
+        summary_html,
+        unsafe_allow_html=True
+    )
+
+# ---------------------------------------------------------
+# ORDER DETAILS TABLE
+# ---------------------------------------------------------
+
 def display_order_details_table():
     df = process_orders()
 
@@ -23,12 +176,19 @@ def display_order_details_table():
     )
 
     if not dates:
-        st.info("No upcoming orders found.")
+        st.info(
+            "No upcoming orders found."
+        )
         return df
 
-    # If no date has been selected yet, default to first date
-    if not st.session_state.get("selected_date"):
-        st.session_state.selected_date = dates[0]
+    # If no date has been selected yet,
+    # default to first date
+    if not st.session_state.get(
+        "selected_date"
+    ):
+        st.session_state.selected_date = (
+            dates[0]
+        )
 
     selected_date = st.selectbox(
         "Delivery Date",
@@ -47,23 +207,32 @@ def display_order_details_table():
     )
 
     # Keep delivery slots as normal,
-    # but group all pickup windows under one "Pick up" filter
+    # but group all pickup windows
+    # under one "Pick up" filter
     slots = [
         slot
         for slot in raw_slots
-        if not str(slot).startswith("Pick up")
+        if not str(slot).startswith(
+            "Pick up"
+        )
     ]
 
-    # Add one generic Pick up filter if pickup orders exist
+    # Add one generic Pick up filter
+    # if pickup orders exist
     if any(
         str(slot).startswith("Pick up")
         for slot in raw_slots
     ):
         slots.append("Pick up")
 
-    # If nothing is selected, automatically select every slot
-    if not st.session_state.get("selected_slots"):
-        st.session_state.selected_slots = slots
+    # If nothing is selected,
+    # automatically select every slot
+    if not st.session_state.get(
+        "selected_slots"
+    ):
+        st.session_state.selected_slots = (
+            slots
+        )
 
     selected_slots = st.multiselect(
         "Time Slot(s)",
@@ -72,11 +241,27 @@ def display_order_details_table():
     )
 
     # ---------------------------------------------------------
+    # TIMESLOT WORKLOAD SUMMARY
+    # ---------------------------------------------------------
+
+    display_timeslot_summary(
+        df,
+        selected_date
+    )
+
+    # ---------------------------------------------------------
+    # ORDER DETAILS
+    # ---------------------------------------------------------
+
+    st.subheader("Order Details")
+
+    # ---------------------------------------------------------
     # FILTER ORDERS
     # ---------------------------------------------------------
 
     filtered = df[
-        df["Delivery Date"] == selected_date
+        df["Delivery Date"]
+        == selected_date
     ].copy()
 
     if selected_slots:
@@ -84,17 +269,24 @@ def display_order_details_table():
 
         for slot in selected_slots:
 
-            # "Pick up" matches every pickup time window
+            # "Pick up" matches every
+            # pickup time window
             if slot == "Pick up":
                 slot_masks.append(
-                    filtered["Delivery Slot"]
+                    filtered[
+                        "Delivery Slot"
+                    ]
                     .astype(str)
-                    .str.startswith("Pick up")
+                    .str.startswith(
+                        "Pick up"
+                    )
                 )
 
             else:
                 slot_masks.append(
-                    filtered["Delivery Slot"] == slot
+                    filtered[
+                        "Delivery Slot"
+                    ] == slot
                 )
 
         combined_mask = slot_masks[0]
@@ -109,8 +301,11 @@ def display_order_details_table():
         ].copy()
 
     else:
-        # If nothing is selected, show no rows
-        filtered = filtered.iloc[0:0].copy()
+        # If nothing is selected,
+        # show no rows
+        filtered = filtered.iloc[
+            0:0
+        ].copy()
 
     # ---------------------------------------------------------
     # SORT ORDERS BY TIMESLOT
@@ -123,13 +318,21 @@ def display_order_details_table():
         "Custom Time": 5,
     }
 
-    # All pickup windows appear after normal delivery slots
+    # All pickup windows appear
+    # after normal delivery slots
     filtered["Slot Order"] = (
-        filtered["Delivery Slot"].apply(
+        filtered[
+            "Delivery Slot"
+        ].apply(
             lambda slot:
                 4
-                if str(slot).startswith("Pick up")
-                else slot_order.get(slot, 999)
+                if str(slot).startswith(
+                    "Pick up"
+                )
+                else slot_order.get(
+                    slot,
+                    999
+                )
         )
     )
 
@@ -150,8 +353,9 @@ def display_order_details_table():
         columns=["Slot Order"]
     )
 
-    # Delivery Date is already selected above,
-    # so we don't need to show it in the table
+    # Delivery Date is already
+    # selected above, so don't
+    # show it in the table
     display_df = filtered.drop(
         columns=["Delivery Date"]
     )
@@ -166,7 +370,8 @@ def display_order_details_table():
 
     height = min(
         header_height
-        + len(display_df) * row_height,
+        + len(display_df)
+        * row_height,
         max_height,
     )
 
@@ -197,7 +402,8 @@ def display_order_details_table():
                 ),
         },
 
-        # Only Completed and Assignee can be edited
+        # Only Completed and Assignee
+        # can be edited
         disabled=[
             col
             for col in display_df.columns
@@ -215,25 +421,31 @@ def display_order_details_table():
     updated = False
 
     for _, row in edited_df.iterrows():
-        shopify_id = row["Shopify ID"]
+        shopify_id = row[
+            "Shopify ID"
+        ]
 
         # -----------------------------------------------------
         # COMPLETED STATUS
         # -----------------------------------------------------
 
-        original_completed = filtered.loc[
-            filtered["Shopify ID"]
-            == shopify_id,
-            "Completed",
-        ].iloc[0]
+        original_completed = (
+            filtered.loc[
+                filtered["Shopify ID"]
+                == shopify_id,
+                "Completed",
+            ].iloc[0]
+        )
 
         if (
             row["Completed"]
             != original_completed
         ):
-            changed = update_order_completed(
-                shopify_id,
-                row["Completed"],
+            changed = (
+                update_order_completed(
+                    shopify_id,
+                    row["Completed"],
+                )
             )
 
             updated = (
@@ -244,35 +456,46 @@ def display_order_details_table():
         # ASSIGNEE
         # -----------------------------------------------------
 
-        original_assignee = filtered.loc[
-            filtered["Shopify ID"]
-            == shopify_id,
-            "Assignee",
-        ].iloc[0]
+        original_assignee = (
+            filtered.loc[
+                filtered["Shopify ID"]
+                == shopify_id,
+                "Assignee",
+            ].iloc[0]
+        )
 
-        new_assignee = row["Assignee"]
+        new_assignee = row[
+            "Assignee"
+        ]
 
         # Blank means no assignee
-        if pd.isna(original_assignee):
+        if pd.isna(
+            original_assignee
+        ):
             original_assignee = None
 
-        if pd.isna(new_assignee):
+        if pd.isna(
+            new_assignee
+        ):
             new_assignee = None
 
         if (
             new_assignee
             != original_assignee
         ):
-            changed = update_order_assignee(
-                shopify_id,
-                new_assignee,
+            changed = (
+                update_order_assignee(
+                    shopify_id,
+                    new_assignee,
+                )
             )
 
             updated = (
                 updated or changed
             )
 
-    # Rerun so dashboard reflects Shopify updates
+    # Rerun so dashboard reflects
+    # Shopify updates
     if updated:
         st.rerun()
 
