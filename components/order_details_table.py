@@ -115,6 +115,11 @@ def display_timeslot_summary(df, selected_date):
                 unsafe_allow_html=True
             )
 
+    # Add spacing between summary cards and order table
+    st.markdown(
+        "<div style='height: 24px;'></div>",
+        unsafe_allow_html=True
+    )
 
 # ---------------------------------------------------------
 # ORDER DETAILS TABLE
