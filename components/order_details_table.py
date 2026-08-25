@@ -55,16 +55,56 @@ def display_timeslot_summary(df, selected_date):
 
         total_count = delivery_count + pickup_count
 
+        # Display the summary card for this timeslot
         with col:
-            st.metric(
-                f"{label} Unfulfilled",
-                total_count,
-                border=True
-            )
+            st.markdown(
+                f"""
+                <div style="
+                    border: 1px solid #ddd8d2;
+                    border-radius: 12px;
+                    padding: 20px 24px;
+                    min-height: 165px;
+                ">
+                    <div style="
+                        font-size: 18px;
+                        margin-bottom: 6px;
+                    ">
+                        {label} Unfulfilled
+                    </div>
 
-            st.caption(
-                f"Delivery: {delivery_count} · "
-                f"Pick Up: {pickup_count}"
+                    <div style="
+                        font-size: 42px;
+                        line-height: 1.2;
+                        margin-bottom: 20px;
+                    ">
+                        {total_count}
+                    </div>
+
+                    <div style="
+                        display: flex;
+                        gap: 32px;
+                    ">
+                        <div>
+                            <div style="font-size: 13px; opacity: 0.65;">
+                                Delivery
+                            </div>
+                            <div style="font-size: 24px; font-weight: 600;">
+                                {delivery_count}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 13px; opacity: 0.65;">
+                                Pick Up
+                            </div>
+                            <div style="font-size: 24px; font-weight: 600;">
+                                {pickup_count}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
             )
 
 def display_order_details_table():
