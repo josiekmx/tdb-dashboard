@@ -78,37 +78,37 @@ def display_timeslot_summary(df, selected_date):
 
         # Display summary card
         with col:
-            card_html = f"""
-<div style="border: 1px solid #ddd8d2; border-radius: 12px; padding: 20px 24px; min-height: 165px;">
-    <div style="font-size: 18px; margin-bottom: 6px;">
-        {label} Unfulfilled
-    </div>
-
-    <div style="font-size: 42px; line-height: 1.2; margin-bottom: 20px;">
-        {total_count}
-    </div>
-
-    <div style="display: flex; gap: 40px;">
-        <div>
-            <div style="font-size: 14px; opacity: 0.65;">
-                Delivery
-            </div>
-            <div style="font-size: 24px; font-weight: 600;">
-                {delivery_count}
-            </div>
-        </div>
-
-        <div>
-            <div style="font-size: 14px; opacity: 0.65;">
-                Pick Up
-            </div>
-            <div style="font-size: 24px; font-weight: 600;">
-                {pickup_count}
-            </div>
-        </div>
-    </div>
-</div>
-"""
+            card_html = (
+                f'<div style="border:1px solid #ddd8d2; border-radius:12px; '
+                f'padding:20px 24px; min-height:165px;">'
+                
+                f'<div style="font-size:18px; margin-bottom:6px;">'
+                f'{label} Unfulfilled'
+                f'</div>'
+                
+                f'<div style="font-size:42px; line-height:1.2; margin-bottom:20px;">'
+                f'{total_count}'
+                f'</div>'
+                
+                f'<div style="display:flex; gap:40px;">'
+                
+                f'<div>'
+                f'<div style="font-size:14px; opacity:0.65;">Delivery</div>'
+                f'<div style="font-size:24px; font-weight:600;">'
+                f'{delivery_count}'
+                f'</div>'
+                f'</div>'
+                
+                f'<div>'
+                f'<div style="font-size:14px; opacity:0.65;">Pick Up</div>'
+                f'<div style="font-size:24px; font-weight:600;">'
+                f'{pickup_count}'
+                f'</div>'
+                f'</div>'
+                
+                f'</div>'
+                f'</div>'
+            )
 
             st.markdown(
                 card_html,
