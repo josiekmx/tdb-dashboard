@@ -52,6 +52,11 @@ def build_sku_summary(orders):
         ["SKU", "No Ribbon", "Ribbon"]
     ]
 
+def style_zero_counts(value):
+    if value == 0:
+        return "color: #B8B3AD;"
+    return ""
+
 
 def display_order_summary_tables(filtered):
     delivery_orders = filtered[
@@ -78,8 +83,13 @@ def display_order_summary_tables(filtered):
             delivery_orders
         )
 
+        styled_delivery_summary = delivery_summary.style.map(
+            style_zero_counts,
+            subset=["No Ribbon", "Ribbon"]
+        )
+
         st.dataframe(
-            delivery_summary,
+            styled_delivery_summary,
             use_container_width=True,
             hide_index=True
         )
@@ -98,8 +108,13 @@ def display_order_summary_tables(filtered):
             pickup_orders
         )
 
+        styled_pickup_summary = pickup_summary.style.map(
+            style_zero_counts,
+            subset=["No Ribbon", "Ribbon"]
+        )
+
         st.dataframe(
-            pickup_summary,
+            styled_pickup_summary,
             use_container_width=True,
             hide_index=True
         )
