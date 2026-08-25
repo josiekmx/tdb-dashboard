@@ -60,7 +60,7 @@ def style_zero_counts(value):
 
 def display_order_summary_tables(filtered):
     st.subheader("Order Summary")
-    
+
     delivery_orders = filtered[
         filtered["Delivery Type"] == "Delivery"
     ]
@@ -76,11 +76,7 @@ def display_order_summary_tables(filtered):
     # -------------------------
     with col1:
         st.markdown("### Deliveries")
-        st.metric(
-            "Total Orders",
-            len(delivery_orders)
-        )
-
+        
         delivery_summary = build_sku_summary(
             delivery_orders
         )
@@ -101,10 +97,6 @@ def display_order_summary_tables(filtered):
     # -------------------------
     with col2:
         st.markdown("### Pickups")
-        st.metric(
-            "Total Orders",
-            len(pickup_orders)
-        )
 
         pickup_summary = build_sku_summary(
             pickup_orders
