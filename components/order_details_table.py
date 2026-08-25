@@ -9,6 +9,64 @@ from shopify_client import (
 )
 
 
+# Display unfulfilled order counts by AM / PM / NIGHT
+def display_timeslot_summary(df, selected_date):
+    date_orders = df[
+        df["Delivery Date"] == selected_date
+    ]
+
+    slot_groups = {
+        "AM": {
+            "delivery": ["9:00 AM - 2:00 PM"],
+            "pickup": ["Pick up 9:00 AM - 12:00 PM"],
+        },
+        "PM": {
+            "delivery": ["1:00 PM - 6:00 PM"],
+            "pickup": [
+                "Pick up 12:00 PM - 3:00 PM",
+                "Pick up 3:00 PM - 5:00 PM",
+            ],
+        },
+        "NIGHT": {
+            "delivery": ["5:00 PM - 10:00 PM"],
+            "pickup": ["Pick up 5:00 PM - 9:00 PM"],
+        },
+    }
+
+    cols = st.columns(3)
+
+    for col, (label, slots) in zip(
+        cols,
+        slot_groups.items()
+    ):
+        delivery_count = date_orders[
+            (date_orders["Delivery Type"] == "Delivery")
+            & date_orders["Delivery Slot"].isin(
+                slots["delivery"]
+            )
+        ]["Order"].nunique()
+
+        pickup_count = date_orders[
+            (date_orders["Delivery Type"] == "Pickup")
+            & date_orders["Delivery Slot"].isin(
+                slots["pickup"]
+            )
+        ]["Order"].nunique()
+
+        total_count = delivery_count + pickup_count
+
+        with col:
+            st.metric(
+                f"{label} Unfulfilled",
+                total_count,
+                border=True
+            )
+
+            st.caption(
+                f"Delivery: {delivery_count} · "
+                f"Pick Up: {pickup_count}"
+            )
+
 def display_order_details_table():
     df = process_orders()
 
@@ -69,6 +127,12 @@ def display_order_details_table():
         "Time Slot(s)",
         options=slots,
         key="selected_slots",
+    )
+
+    # Show unfulfilled workload for the selected date
+    display_timeslot_summary(
+        df,
+        selected_date
     )
 
     # ---------------------------------------------------------
