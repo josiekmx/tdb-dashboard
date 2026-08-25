@@ -59,6 +59,8 @@ def style_zero_counts(value):
 
 
 def display_order_summary_tables(filtered):
+    st.subheader("Order Summary")
+    
     delivery_orders = filtered[
         filtered["Delivery Type"] == "Delivery"
     ]
