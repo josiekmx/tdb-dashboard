@@ -231,10 +231,10 @@ def display_detrack_sync():
 
     with col1:
         st.metric(
-            "Total Orders",
-            len(eligible_orders),
+            "Total in Detrack",
+            len(existing_detrack_orders),
             border=True
-        )
+    )
 
     with col2:
         st.metric(
