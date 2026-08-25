@@ -14,6 +14,7 @@ from shopify_client import (
 # ---------------------------------------------------------
 
 # Display unfulfilled order counts by AM / PM / NIGHT
+# Display unfulfilled order counts by AM / PM / NIGHT
 def display_timeslot_summary(df, selected_date):
     date_orders = df[
         df["Delivery Date"] == selected_date
@@ -21,41 +22,25 @@ def display_timeslot_summary(df, selected_date):
 
     slot_groups = {
         "AM": {
-            "delivery": [
-                "9:00 AM - 2:00 PM"
-            ],
-            "pickup": [
-                "Pick up 9:00 AM - 12:00 PM"
-            ],
+            "delivery": ["9:00 AM - 2:00 PM"],
+            "pickup": ["Pick up 9:00 AM - 12:00 PM"],
         },
-
         "PM": {
-            "delivery": [
-                "1:00 PM - 6:00 PM"
-            ],
+            "delivery": ["1:00 PM - 6:00 PM"],
             "pickup": [
                 "Pick up 12:00 PM - 3:00 PM",
                 "Pick up 3:00 PM - 5:00 PM",
             ],
         },
-
         "NIGHT": {
-            "delivery": [
-                "5:00 PM - 10:00 PM"
-            ],
-            "pickup": [
-                "Pick up 5:00 PM - 9:00 PM"
-            ],
+            "delivery": ["5:00 PM - 10:00 PM"],
+            "pickup": ["Pick up 5:00 PM - 9:00 PM"],
         },
     }
 
-    cols = st.columns(3)
+    cards = ""
 
-    for col, (label, slots) in zip(
-        cols,
-        slot_groups.items()
-    ):
-        # Count delivery orders
+    for label, slots in slot_groups.items():
         delivery_count = date_orders[
             (date_orders["Delivery Type"] == "Delivery")
             & date_orders["Delivery Slot"].isin(
@@ -63,7 +48,6 @@ def display_timeslot_summary(df, selected_date):
             )
         ]["Order"].nunique()
 
-        # Count pickup orders
         pickup_count = date_orders[
             (date_orders["Delivery Type"] == "Pickup")
             & date_orders["Delivery Slot"].isin(
@@ -76,48 +60,101 @@ def display_timeslot_summary(df, selected_date):
             + pickup_count
         )
 
-        # Display summary card
-        with col:
-            card_html = (
-                f'<div style="border:1px solid #ddd8d2; border-radius:12px; '
-                f'padding:20px 24px; min-height:165px;">'
-                
-                f'<div style="font-size:18px; margin-bottom:6px;">'
-                f'{label} Unfulfilled'
-                f'</div>'
-                
-                f'<div style="font-size:42px; line-height:1.2; margin-bottom:20px;">'
-                f'{total_count}'
-                f'</div>'
-                
-                f'<div style="display:flex; gap:40px;">'
-                
-                f'<div>'
-                f'<div style="font-size:14px; opacity:0.65;">Delivery</div>'
-                f'<div style="font-size:24px; font-weight:600;">'
-                f'{delivery_count}'
-                f'</div>'
-                f'</div>'
-                
-                f'<div>'
-                f'<div style="font-size:14px; opacity:0.65;">Pick Up</div>'
-                f'<div style="font-size:24px; font-weight:600;">'
-                f'{pickup_count}'
-                f'</div>'
-                f'</div>'
-                
-                f'</div>'
-                f'</div>'
-            )
+        cards += (
+            f'<div class="timeslot-card">'
+            f'<div class="timeslot-title">{label} Unfulfilled</div>'
+            f'<div class="timeslot-total">{total_count}</div>'
+            f'<div class="timeslot-breakdown">'
+            f'<div>'
+            f'<div class="timeslot-label">Delivery</div>'
+            f'<div class="timeslot-count">{delivery_count}</div>'
+            f'</div>'
+            f'<div>'
+            f'<div class="timeslot-label">Pick Up</div>'
+            f'<div class="timeslot-count">{pickup_count}</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>'
+        )
 
-            st.markdown(
-                card_html,
-                unsafe_allow_html=True
-            )
+    summary_html = f"""
+<style>
+.timeslot-grid {{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+    margin-bottom: 24px;
+}}
 
-    # Add spacing between summary cards and order table
+.timeslot-card {{
+    border: 1px solid #ddd8d2;
+    border-radius: 12px;
+    padding: 14px 18px;
+    min-width: 0;
+}}
+
+.timeslot-title {{
+    font-size: 15px;
+    margin-bottom: 3px;
+}}
+
+.timeslot-total {{
+    font-size: 32px;
+    line-height: 1.15;
+    margin-bottom: 12px;
+}}
+
+.timeslot-breakdown {{
+    display: flex;
+    gap: 28px;
+}}
+
+.timeslot-label {{
+    font-size: 12px;
+    opacity: 0.6;
+}}
+
+.timeslot-count {{
+    font-size: 19px;
+    font-weight: 600;
+}}
+
+/* Mobile */
+@media (max-width: 640px) {{
+    .timeslot-grid {{
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }}
+
+    .timeslot-card {{
+        padding: 12px 16px;
+    }}
+
+    .timeslot-title {{
+        font-size: 14px;
+    }}
+
+    .timeslot-total {{
+        font-size: 28px;
+        margin-bottom: 8px;
+    }}
+
+    .timeslot-breakdown {{
+        gap: 36px;
+    }}
+
+    .timeslot-count {{
+        font-size: 18px;
+    }}
+}}
+</style>
+
+<div class="timeslot-grid">{cards}</div>
+"""
+
     st.markdown(
-        "<div style='height: 24px;'></div>",
+        summary_html,
         unsafe_allow_html=True
     )
 
