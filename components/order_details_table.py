@@ -485,16 +485,16 @@ def display_order_details_table():
             row["Completed"],
         )
 
-        if changed:
-            # Remember the user's selection while Shopify
-            # propagates the updated tag to the order list.
-            st.session_state.pending_completed_updates[
-                str(shopify_id)
-            ] = bool(row["Completed"])
+            if changed:
+                # Remember the user's selection while Shopify
+                # propagates the updated tag to the order list.
+                st.session_state.pending_completed_updates[
+                    str(shopify_id)
+                ] = bool(row["Completed"])
 
-        updated = (
-            updated or changed
-        )
+            updated = (
+                updated or changed
+            )
 
         # -----------------------------------------------------
         # ASSIGNEE
