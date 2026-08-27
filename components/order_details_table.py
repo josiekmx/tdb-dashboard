@@ -166,6 +166,48 @@ def display_order_details_table():
     df = process_orders()
 
     # ---------------------------------------------------------
+    # TEMPORARY COMPLETED STATE
+    # ---------------------------------------------------------
+
+    # Keep recently edited completion states visible while
+    # Shopify's order list catches up after an update.
+    if "pending_completed_updates" not in st.session_state:
+        st.session_state.pending_completed_updates = {}
+
+    pending_completed_updates = (
+        st.session_state.pending_completed_updates
+    )
+
+    for shopify_id, completed in list(
+        pending_completed_updates.items()
+    ):
+        matching_rows = df[
+            df["Shopify ID"].astype(str)
+            == str(shopify_id)
+        ]
+
+        if matching_rows.empty:
+            continue
+
+        shopify_completed = bool(
+            matching_rows.iloc[0]["Completed"]
+        )
+
+        # Shopify has now caught up, so remove the temporary override
+        if shopify_completed == completed:
+            del pending_completed_updates[
+                shopify_id
+            ]
+
+        else:
+            # Until Shopify catches up, keep the user's latest selection
+            df.loc[
+                df["Shopify ID"].astype(str)
+                == str(shopify_id),
+                "Completed"
+            ] = completed
+
+    # ---------------------------------------------------------
     # DELIVERY DATE FILTER
     # ---------------------------------------------------------
 
@@ -437,20 +479,22 @@ def display_order_details_table():
             ].iloc[0]
         )
 
-        if (
-            row["Completed"]
-            != original_completed
-        ):
-            changed = (
-                update_order_completed(
-                    shopify_id,
-                    row["Completed"],
-                )
-            )
+        if row["Completed"] != original_completed:
+            changed = update_order_completed(
+            shopify_id,
+            row["Completed"],
+        )
 
-            updated = (
-                updated or changed
-            )
+        if changed:
+            # Remember the user's selection while Shopify
+            # propagates the updated tag to the order list.
+            st.session_state.pending_completed_updates[
+                str(shopify_id)
+            ] = bool(row["Completed"])
+
+        updated = (
+            updated or changed
+        )
 
         # -----------------------------------------------------
         # ASSIGNEE
