@@ -15,6 +15,7 @@ from detrack.client import (
     create_detrack_deliveries,
     get_existing_detrack_order_numbers,
 )
+from detrack.reconciliation import reconcile_delivery_cycles
 
 
 # ---------------------------------------------------------
@@ -89,6 +90,121 @@ def style_status(value):
 
     return styles.get(value, "")
 
+# ---------------------------------------------------------
+# DELIVERY RECONCILIATION CARDS
+# ---------------------------------------------------------
+
+def display_delivery_sync_cards(cycle_summary):
+    cards = ""
+
+    for cycle_name in ["AM", "PM", "NIGHT"]:
+        cycle = cycle_summary[cycle_name]
+
+        cards += (
+            f'<div class="delivery-sync-card">'
+
+            f'<div class="delivery-sync-title">'
+            f'{cycle_name} · Missing in Detrack'
+            f'</div>'
+
+            # Big number = missing
+            f'<div class="delivery-sync-total">'
+            f'{cycle["missing_count"]}'
+            f'</div>'
+
+            # Supporting counts
+            f'<div class="delivery-sync-breakdown">'
+
+            f'<div>'
+            f'<div class="delivery-sync-label">Shopify</div>'
+            f'<div class="delivery-sync-number">'
+            f'{cycle["shopify_count"]}'
+            f'</div>'
+            f'</div>'
+
+            f'<div>'
+            f'<div class="delivery-sync-label">Detrack</div>'
+            f'<div class="delivery-sync-number">'
+            f'{cycle["detrack_count"]}'
+            f'</div>'
+            f'</div>'
+
+            f'</div>'
+            f'</div>'
+        )
+
+    cards_html = f"""
+<style>
+.delivery-sync-grid {{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+    margin-bottom: 24px;
+}}
+
+.delivery-sync-card {{
+    border: 1px solid #ddd8d2;
+    border-radius: 12px;
+    padding: 14px 18px;
+    min-width: 0;
+}}
+
+.delivery-sync-title {{
+    font-size: 15px;
+    margin-bottom: 3px;
+}}
+
+.delivery-sync-total {{
+    font-size: 32px;
+    line-height: 1.15;
+    margin-bottom: 12px;
+}}
+
+.delivery-sync-breakdown {{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+}}
+
+.delivery-sync-label {{
+    font-size: 12px;
+    opacity: 0.6;
+}}
+
+.delivery-sync-number {{
+    font-size: 19px;
+    font-weight: 600;
+}}
+
+/* Mobile */
+@media (max-width: 640px) {{
+    .delivery-sync-grid {{
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }}
+
+    .delivery-sync-card {{
+        padding: 12px 16px;
+    }}
+
+    .delivery-sync-total {{
+        font-size: 28px;
+        margin-bottom: 8px;
+    }}
+}}
+</style>
+
+<div class="delivery-sync-grid">
+    {cards}
+</div>
+"""
+
+    st.markdown(
+        cards_html,
+        unsafe_allow_html=True
+    )
+
 
 # ---------------------------------------------------------
 # DETRACK SYNC PAGE
@@ -140,6 +256,19 @@ def display_detrack_sync():
         st.warning(
             f"Could not check existing Detrack orders: {e}"
         )
+
+    # ---------------------------------------------------------
+    # DELIVERY RECONCILIATION
+    # ---------------------------------------------------------
+
+    cycle_summary = reconcile_delivery_cycles(
+        date_orders,
+        existing_detrack_orders,
+    )
+
+    display_delivery_sync_cards(
+        cycle_summary
+    )    
 
     # ---------------------------------------------------------
     # ORDER STATUS TABLE
