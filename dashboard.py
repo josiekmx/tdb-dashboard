@@ -13,8 +13,6 @@ from components.detrack_sync import display_detrack_sync
 
 #----------------------- TESTING CODE -----------------------
 
-#----------------------- TESTING CODE -----------------------
-
 def display_polaroid_test():
     st.subheader("Polaroid Upload Test")
 
@@ -59,6 +57,7 @@ def display_polaroid_test():
         for prop in properties:
             st.write(prop)
 
+
 #----------------------- original code below -----------------------
 
 # displays login page to authenticate users
@@ -83,24 +82,28 @@ with refresh_col:
         st.rerun()
 
 # Main dashboard sections
-orders_tab, detrack_tab = st.tabs([
+orders_tab, detrack_tab, polaroid_test_tab = st.tabs([
     "Orders",
-    "Detrack Sync"
+    "Detrack Sync",
+    "Polaroid Test"
 ])
 
 with orders_tab:
     # order details table
     filtered_table_data = display_order_details_table()
 
-    # summary tables 
+    # summary tables
     display_order_summary_tables(filtered_table_data)
 
 with detrack_tab:
     display_detrack_sync()
 
+with polaroid_test_tab:
+    display_polaroid_test()
+
 # enables refresh
-# upon refresh, the date and timeslots will return to 
-# default state of the earliest date and all timeslots respectively. 
+# upon refresh, the date and timeslots will return to
+# default state of the earliest date and all timeslots respectively.
 #if st.button("Refresh"):
     # Reset filters
     #st.session_state.selected_date = None
@@ -109,6 +112,3 @@ with detrack_tab:
 
 # insert empty space to optimise ui
 st.markdown("<br>", unsafe_allow_html=True)
-
-
-
