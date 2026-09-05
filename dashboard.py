@@ -74,6 +74,9 @@ def display_polaroid_test():
         st.write("**SKU:**", sku)
         st.write("**Line Item ID:**", line_item_id)
 
+        with st.expander("Raw Line Item JSON"):
+            st.json(item)
+
         st.write("**Bundle Key:**")
         if bundle_key:
             st.code(bundle_key)
