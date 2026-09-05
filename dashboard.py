@@ -80,15 +80,23 @@ def display_polaroid_test():
         else:
             st.write("None")
 
-        st.write("**Photo Upload URL:**")
-        if photo_url:
-            st.code(photo_url)
+        
+        st.write("**Raw Photo Upload Value:**")
 
-            # Clickable link for quick testing
-            st.link_button(
-                "Open Uploaded Photo",
-                photo_url
-            )
+        if photo_url:
+            st.code(repr(photo_url))
+
+            if photo_url.startswith(("http://", "https://")):
+                st.success("Full URL received from Shopify")
+
+                st.link_button(
+                    "Open Uploaded Photo",
+                    photo_url
+                )
+            else:
+                st.warning(
+                    "Shopify API returned a filename/path rather than a full URL."
+                )
         else:
             st.write("None")
 
