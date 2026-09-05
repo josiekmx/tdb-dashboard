@@ -13,6 +13,51 @@ from components.detrack_sync import display_detrack_sync
 
 #----------------------- TESTING CODE -----------------------
 
+#----------------------- TESTING CODE -----------------------
+
+def display_polaroid_test():
+    st.subheader("Polaroid Upload Test")
+
+    test_order = st.text_input(
+        "Enter Shopify order number",
+        placeholder="#TDBXXXXX"
+    )
+
+    if not test_order:
+        st.info("Enter an order number containing a Polaroid upload.")
+        return
+
+    orders = get_orders()
+
+    matched_order = None
+
+    for order in orders:
+        if order.get("name") == test_order:
+            matched_order = order
+            break
+
+    if not matched_order:
+        st.error(f"Order {test_order} not found.")
+        return
+
+    st.success(f"Found {matched_order.get('name')}")
+
+    for item in matched_order.get("line_items", []):
+        st.divider()
+
+        st.write("**Item:**", item.get("title"))
+        st.write("**SKU:**", item.get("sku"))
+        st.write("**Line Item ID:**", item.get("id"))
+
+        st.write("**Properties:**")
+
+        properties = item.get("properties", [])
+
+        if not properties:
+            st.write("No line item properties found.")
+
+        for prop in properties:
+            st.write(prop)
 
 #----------------------- original code below -----------------------
 
