@@ -119,7 +119,7 @@ def display_polaroid_test():
     # ---------------- GRAPHQL ORDER DATA ----------------
 
     st.divider()
-    st.subheader("GraphQL Comparison")
+    st.subheader("GraphQL Bundle Line Properties")
 
     shopify_order_id = matched_order.get("id")
 
@@ -149,16 +149,35 @@ def display_polaroid_test():
             st.divider()
 
             item_title = item.get("title")
+            item_name = item.get("name")
             sku = item.get("sku")
             line_item_id = item.get("id")
-            attributes = item.get("customAttributes", [])
+            line_item_group = item.get("lineItemGroup")
 
-            st.write("**Item:**", item_title)
+            st.write("**Item:**", item_title or item_name)
             st.write("**SKU:**", sku)
             st.write("**GraphQL Line Item ID:**", line_item_id)
 
+            # This line item is not part of a Shopify line item group
+            if not line_item_group:
+                st.write("**Line Item Group:** None")
+                continue
+
+            group_id = line_item_group.get("id")
+            group_title = line_item_group.get("title")
+            group_quantity = line_item_group.get("quantity")
+            attributes = line_item_group.get("customAttributes", [])
+
+            st.write("**Bundle Group ID:**")
+            st.code(group_id)
+
+            st.write("**Bundle Group Title:**")
+            st.write(group_title)
+
+            st.write("**Bundle Group Quantity:**")
+            st.write(group_quantity)
+
             graphql_photo_value = None
-            graphql_bundle_key = None
 
             for attribute in attributes:
                 key = attribute.get("key")
@@ -166,18 +185,9 @@ def display_polaroid_test():
 
                 if key == "Photo Upload":
                     graphql_photo_value = value
+                    break
 
-                if key == "_gs_bundle_key":
-                    graphql_bundle_key = value
-
-            st.write("**GraphQL Bundle Key:**")
-
-            if graphql_bundle_key:
-                st.code(graphql_bundle_key)
-            else:
-                st.write("None")
-
-            st.write("**GraphQL Photo Upload Value:**")
+            st.write("**Bundle Photo Upload Value:**")
 
             if graphql_photo_value:
                 st.code(repr(graphql_photo_value))
@@ -186,26 +196,26 @@ def display_polaroid_test():
                     ("http://", "https://")
                 ):
                     st.success(
-                        "GraphQL returned a full photo URL."
+                        "Bundle Line Properties returned a full photo URL."
                     )
 
                     st.link_button(
-                        "Open GraphQL Uploaded Photo",
+                        "Open Bundle Uploaded Photo",
                         graphql_photo_value,
-                        key=f"graphql_photo_{line_item_id}"
+                        key=f"bundle_photo_{line_item_id}"
                     )
                 else:
                     st.warning(
-                        "GraphQL returned a filename/path "
+                        "Bundle Line Properties returned a filename/path "
                         "rather than a full URL."
                     )
             else:
                 st.write("None")
 
-            st.write("**All Custom Attributes:**")
+            st.write("**All Bundle Line Properties:**")
 
             if not attributes:
-                st.write("No custom attributes found.")
+                st.write("No bundle line properties found.")
             else:
                 for attribute in attributes:
                     st.write(attribute)
