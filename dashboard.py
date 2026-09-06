@@ -1,3 +1,4 @@
+import requests
 import streamlit as st
 
 from components.authentication import check_password
@@ -11,6 +12,7 @@ from detrack.order_builder import build_delivery_orders
 from detrack.sku_mapping import get_sku_tag_mapping
 from detrack.tag_calculator import calculate_tags
 from detrack.validator import validate_order
+
 from polaroid.queue import build_polaroid_queue
 
 
@@ -101,11 +103,13 @@ def display_polaroid_test():
                     "Open Uploaded Photo",
                     photo_url
                 )
+
             else:
                 st.warning(
                     "Shopify REST API returned a filename/path "
                     "rather than a full URL."
                 )
+
         else:
             st.write("None")
 
@@ -113,6 +117,7 @@ def display_polaroid_test():
 
         if not properties:
             st.write("No line item properties found.")
+
         else:
             for prop in properties:
                 st.write(prop)
@@ -125,7 +130,9 @@ def display_polaroid_test():
     shopify_order_id = matched_order.get("id")
 
     try:
-        graphql_order = get_order_graphql(shopify_order_id)
+        graphql_order = get_order_graphql(
+            shopify_order_id
+        )
 
         if not graphql_order:
             st.warning("GraphQL order was not found.")
@@ -153,21 +160,52 @@ def display_polaroid_test():
             item_name = item.get("name")
             sku = item.get("sku")
             line_item_id = item.get("id")
-            line_item_group = item.get("lineItemGroup")
 
-            st.write("**Item:**", item_title or item_name)
-            st.write("**SKU:**", sku)
-            st.write("**GraphQL Line Item ID:**", line_item_id)
+            line_item_group = (
+                item.get("lineItemGroup")
+            )
 
-            # This line item is not part of a Shopify line item group
+            st.write(
+                "**Item:**",
+                item_title or item_name
+            )
+
+            st.write(
+                "**SKU:**",
+                sku
+            )
+
+            st.write(
+                "**GraphQL Line Item ID:**",
+                line_item_id
+            )
+
+            # This line item is not part
+            # of a Shopify line item group
             if not line_item_group:
-                st.write("**Line Item Group:** None")
+                st.write(
+                    "**Line Item Group:** None"
+                )
                 continue
 
-            group_id = line_item_group.get("id")
-            group_title = line_item_group.get("title")
-            group_quantity = line_item_group.get("quantity")
-            attributes = line_item_group.get("customAttributes", [])
+            group_id = (
+                line_item_group.get("id")
+            )
+
+            group_title = (
+                line_item_group.get("title")
+            )
+
+            group_quantity = (
+                line_item_group.get("quantity")
+            )
+
+            attributes = (
+                line_item_group.get(
+                    "customAttributes",
+                    []
+                )
+            )
 
             st.write("**Bundle Group ID:**")
             st.code(group_id)
@@ -188,41 +226,59 @@ def display_polaroid_test():
                     graphql_photo_value = value
                     break
 
-            st.write("**Bundle Photo Upload Value:**")
+            st.write(
+                "**Bundle Photo Upload Value:**"
+            )
 
             if graphql_photo_value:
-                st.code(repr(graphql_photo_value))
+                st.code(
+                    repr(graphql_photo_value)
+                )
 
                 if graphql_photo_value.startswith(
                     ("http://", "https://")
                 ):
                     st.success(
-                        "Bundle Line Properties returned a full photo URL."
+                        "Bundle Line Properties "
+                        "returned a full photo URL."
                     )
 
                     st.link_button(
                         "Open Bundle Uploaded Photo",
                         graphql_photo_value,
-                        key=f"bundle_photo_{line_item_id}"
+                        key=(
+                            f"bundle_photo_"
+                            f"{line_item_id}"
+                        )
                     )
+
                 else:
                     st.warning(
-                        "Bundle Line Properties returned a filename/path "
-                        "rather than a full URL."
+                        "Bundle Line Properties returned "
+                        "a filename/path rather than "
+                        "a full URL."
                     )
+
             else:
                 st.write("None")
 
-            st.write("**All Bundle Line Properties:**")
+            st.write(
+                "**All Bundle Line Properties:**"
+            )
 
             if not attributes:
-                st.write("No bundle line properties found.")
+                st.write(
+                    "No bundle line properties found."
+                )
+
             else:
                 for attribute in attributes:
                     st.write(attribute)
 
     except Exception as e:
-        st.error(f"GraphQL test failed: {e}")
+        st.error(
+            f"GraphQL test failed: {e}"
+        )
 
     # ---------------- POLAROID QUEUE TEST ----------------
 
@@ -230,17 +286,275 @@ def display_polaroid_test():
     st.subheader("Polaroid Queue Test")
 
     if st.button("Build Polaroid Queue"):
-        queue = build_polaroid_queue()
 
-        st.write(f"**Polaroids detected:** {len(queue)}")
+        with st.spinner(
+            "Building Polaroid queue..."
+        ):
+            st.session_state[
+                "polaroid_queue"
+            ] = build_polaroid_queue()
 
-        if not queue:
-            st.warning("No Polaroids detected.")
-        else:
-            st.dataframe(
-                queue,
-                use_container_width=True
-            )    
+    queue = st.session_state.get(
+        "polaroid_queue",
+        []
+    )
+
+    if queue:
+        st.write(
+            f"**Polaroids detected:** "
+            f"{len(queue)}"
+        )
+
+        st.dataframe(
+            queue,
+            use_container_width=True
+        )
+
+        # ---------------- SINGLE DOWNLOAD TEST ----------------
+
+        st.divider()
+        st.subheader(
+            "Single Polaroid Download Test"
+        )
+
+        st.caption(
+            "Downloads one Polaroid only. "
+            "This does not update any print status."
+        )
+
+        options = {}
+
+        for index, polaroid in enumerate(queue):
+
+            order_name = polaroid.get(
+                "order"
+            )
+
+            recipient = polaroid.get(
+                "recipient"
+            )
+
+            source = polaroid.get(
+                "source"
+            )
+
+            delivery_date = polaroid.get(
+                "delivery_date"
+            )
+
+            label = (
+                f"{order_name} | "
+                f"{recipient} | "
+                f"{delivery_date} | "
+                f"{source}"
+            )
+
+            # Index keeps each option unique
+            # even if one order contains
+            # multiple Polaroids.
+            options[
+                f"{index} - {label}"
+            ] = polaroid
+
+        selected_label = st.selectbox(
+            "Select one Polaroid to test",
+            options=list(options.keys())
+        )
+
+        selected_polaroid = (
+            options[selected_label]
+        )
+
+        photo_url = (
+            selected_polaroid.get(
+                "photo_url"
+            )
+        )
+
+        order_name = (
+            selected_polaroid.get(
+                "order",
+                "polaroid"
+            )
+        )
+
+        source = (
+            selected_polaroid.get(
+                "source",
+                ""
+            )
+        )
+
+        st.write("**Selected URL:**")
+        st.code(photo_url)
+
+        if st.button(
+            "Fetch Selected Polaroid"
+        ):
+
+            try:
+                response = requests.get(
+                    photo_url,
+                    timeout=20
+                )
+
+                response.raise_for_status()
+
+                content_type = (
+                    response.headers
+                    .get(
+                        "Content-Type",
+                        ""
+                    )
+                    .lower()
+                )
+
+                if not content_type.startswith(
+                    "image/"
+                ):
+                    st.error(
+                        "Shopify responded "
+                        "successfully, but the file "
+                        "is not an image."
+                    )
+
+                    st.write(
+                        "**Content Type:**",
+                        content_type
+                    )
+
+                else:
+                    image_bytes = (
+                        response.content
+                    )
+
+                    if not image_bytes:
+                        st.error(
+                            "The image response "
+                            "was empty."
+                        )
+
+                    else:
+                        st.session_state[
+                            "test_polaroid_bytes"
+                        ] = image_bytes
+
+                        st.session_state[
+                            "test_polaroid_content_type"
+                        ] = content_type
+
+                        st.session_state[
+                            "test_polaroid_order"
+                        ] = order_name
+
+                        st.session_state[
+                            "test_polaroid_source"
+                        ] = source
+
+                        st.success(
+                            "Polaroid fetched "
+                            "successfully."
+                        )
+
+            except requests.RequestException as e:
+                st.error(
+                    f"Could not fetch "
+                    f"Polaroid: {e}"
+                )
+
+        # ---------------- DOWNLOAD BUTTON ----------------
+
+        image_bytes = st.session_state.get(
+            "test_polaroid_bytes"
+        )
+
+        if image_bytes:
+
+            test_order_name = (
+                st.session_state.get(
+                    "test_polaroid_order",
+                    "polaroid"
+                )
+            )
+
+            test_source = (
+                st.session_state.get(
+                    "test_polaroid_source",
+                    ""
+                )
+            )
+
+            content_type = (
+                st.session_state.get(
+                    "test_polaroid_content_type",
+                    "image/jpeg"
+                )
+            )
+
+            extension_map = {
+                "image/jpeg": "jpg",
+                "image/jpg": "jpg",
+                "image/png": "png",
+                "image/webp": "webp",
+                "image/heic": "heic",
+                "image/heif": "heif",
+            }
+
+            extension = (
+                extension_map.get(
+                    content_type,
+                    "jpg"
+                )
+            )
+
+            clean_order = (
+                str(test_order_name)
+                .replace("#", "")
+                .replace(" ", "_")
+            )
+
+            clean_source = (
+                str(test_source)
+                .replace(" ", "_")
+            )
+
+            filename = (
+                f"{clean_order}_"
+                f"{clean_source}_"
+                f"TEST."
+                f"{extension}"
+            )
+
+            st.write(
+                f"**Image size:** "
+                f"{len(image_bytes):,} bytes"
+            )
+
+            st.write(
+                "**Content Type:**",
+                content_type
+            )
+
+            st.image(
+                image_bytes,
+                caption=(
+                    f"{test_order_name} — "
+                    f"{test_source}"
+                ),
+                width=300
+            )
+
+            st.download_button(
+                label="Download Test Polaroid",
+                data=image_bytes,
+                file_name=filename,
+                mime=content_type
+            )
+
+    elif "polaroid_queue" in st.session_state:
+        st.warning(
+            "No Polaroids detected."
+        )
 
 
 # ----------------------- ORIGINAL CODE BELOW -----------------------
@@ -257,34 +571,49 @@ st.set_page_config(
 )
 
 # Dashboard header with refresh button on the right
-header_col, refresh_col = st.columns([8, 1])
+header_col, refresh_col = st.columns(
+    [8, 1]
+)
 
 with header_col:
-    st.header("The Daily Blooms Dashboard")
+    st.header(
+        "The Daily Blooms Dashboard"
+    )
 
 with refresh_col:
-    if st.button("Refresh", use_container_width=True):
+    if st.button(
+        "Refresh",
+        use_container_width=True
+    ):
         st.rerun()
 
 # Main dashboard sections
-orders_tab, detrack_tab, polaroid_test_tab = st.tabs([
-    "Orders",
-    "Detrack Sync",
-    "Polaroid Test"
-])
+orders_tab, detrack_tab, polaroid_test_tab = (
+    st.tabs([
+        "Orders",
+        "Detrack Sync",
+        "Polaroid Test"
+    ])
+)
 
 with orders_tab:
+
     # Order details table
-    filtered_table_data = display_order_details_table()
+    filtered_table_data = (
+        display_order_details_table()
+    )
 
     # Summary tables
-    display_order_summary_tables(filtered_table_data)
+    display_order_summary_tables(
+        filtered_table_data
+    )
 
 with detrack_tab:
     display_detrack_sync()
 
 with polaroid_test_tab:
     display_polaroid_test()
+
 
 # Enables refresh
 # Upon refresh, the date and timeslots will return to
@@ -295,5 +624,9 @@ with polaroid_test_tab:
 #     st.session_state.selected_slots = []
 #     st.rerun()
 
+
 # Insert empty space to optimise UI
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown(
+    "<br>",
+    unsafe_allow_html=True
+)
