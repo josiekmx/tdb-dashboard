@@ -5,7 +5,7 @@ from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
 from components.detrack_sync import display_detrack_sync
 
-from shopify_client import get_orders
+from shopify_client import get_orders, get_order_graphql
 
 from detrack.order_builder import build_delivery_orders
 from detrack.sku_mapping import get_sku_tag_mapping
@@ -48,6 +48,10 @@ def display_polaroid_test():
         st.warning("No line items found for this order.")
         return
 
+    # ---------------- REST ORDER DATA ----------------
+
+    st.subheader("REST API Comparison")
+
     for item in line_items:
         st.divider()
 
@@ -78,19 +82,19 @@ def display_polaroid_test():
             st.json(item)
 
         st.write("**Bundle Key:**")
+
         if bundle_key:
             st.code(bundle_key)
         else:
             st.write("None")
 
-        
         st.write("**Raw Photo Upload Value:**")
 
         if photo_url:
             st.code(repr(photo_url))
 
             if photo_url.startswith(("http://", "https://")):
-                st.success("Full URL received from Shopify")
+                st.success("Full URL received from Shopify REST API")
 
                 st.link_button(
                     "Open Uploaded Photo",
@@ -98,7 +102,8 @@ def display_polaroid_test():
                 )
             else:
                 st.warning(
-                    "Shopify API returned a filename/path rather than a full URL."
+                    "Shopify REST API returned a filename/path "
+                    "rather than a full URL."
                 )
         else:
             st.write("None")
@@ -110,6 +115,103 @@ def display_polaroid_test():
         else:
             for prop in properties:
                 st.write(prop)
+
+    # ---------------- GRAPHQL ORDER DATA ----------------
+
+    st.divider()
+    st.subheader("GraphQL Comparison")
+
+    shopify_order_id = matched_order.get("id")
+
+    try:
+        graphql_order = get_order_graphql(shopify_order_id)
+
+        if not graphql_order:
+            st.warning("GraphQL order was not found.")
+            return
+
+        st.write(
+            "**GraphQL Order:**",
+            graphql_order.get("name")
+        )
+
+        graphql_line_items = (
+            graphql_order
+            .get("lineItems", {})
+            .get("nodes", [])
+        )
+
+        if not graphql_line_items:
+            st.warning("No GraphQL line items found.")
+            return
+
+        for item in graphql_line_items:
+            st.divider()
+
+            item_title = item.get("title")
+            sku = item.get("sku")
+            line_item_id = item.get("id")
+            attributes = item.get("customAttributes", [])
+
+            st.write("**Item:**", item_title)
+            st.write("**SKU:**", sku)
+            st.write("**GraphQL Line Item ID:**", line_item_id)
+
+            graphql_photo_value = None
+            graphql_bundle_key = None
+
+            for attribute in attributes:
+                key = attribute.get("key")
+                value = attribute.get("value")
+
+                if key == "Photo Upload":
+                    graphql_photo_value = value
+
+                if key == "_gs_bundle_key":
+                    graphql_bundle_key = value
+
+            st.write("**GraphQL Bundle Key:**")
+
+            if graphql_bundle_key:
+                st.code(graphql_bundle_key)
+            else:
+                st.write("None")
+
+            st.write("**GraphQL Photo Upload Value:**")
+
+            if graphql_photo_value:
+                st.code(repr(graphql_photo_value))
+
+                if graphql_photo_value.startswith(
+                    ("http://", "https://")
+                ):
+                    st.success(
+                        "GraphQL returned a full photo URL."
+                    )
+
+                    st.link_button(
+                        "Open GraphQL Uploaded Photo",
+                        graphql_photo_value,
+                        key=f"graphql_photo_{line_item_id}"
+                    )
+                else:
+                    st.warning(
+                        "GraphQL returned a filename/path "
+                        "rather than a full URL."
+                    )
+            else:
+                st.write("None")
+
+            st.write("**All Custom Attributes:**")
+
+            if not attributes:
+                st.write("No custom attributes found.")
+            else:
+                for attribute in attributes:
+                    st.write(attribute)
+
+    except Exception as e:
+        st.error(f"GraphQL test failed: {e}")
 
 
 # ----------------------- ORIGINAL CODE BELOW -----------------------
