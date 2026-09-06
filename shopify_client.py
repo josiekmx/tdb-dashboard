@@ -47,6 +47,64 @@ def get_orders(limit=250):
 
     return response.json()["orders"]
 
+# TESTING: retrieves one Shopify order through GraphQL
+# to inspect line item custom attributes
+def get_order_graphql(shopify_order_id):
+    url = f"https://{SHOP}/admin/api/2026-01/graphql.json"
+
+    headers = {
+        "X-Shopify-Access-Token": TOKEN,
+        "Content-Type": "application/json"
+    }
+
+    graphql_order_id = f"gid://shopify/Order/{shopify_order_id}"
+
+    query = """
+    query GetOrder($id: ID!) {
+        order(id: $id) {
+            id
+            name
+
+            lineItems(first: 50) {
+                nodes {
+                    id
+                    name
+                    title
+                    sku
+
+                    customAttributes {
+                        key
+                        value
+                    }
+                }
+            }
+        }
+    }
+    """
+
+    payload = {
+        "query": query,
+        "variables": {
+            "id": graphql_order_id
+        }
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    # GraphQL can return HTTP 200 even when the query has errors
+    if data.get("errors"):
+        raise Exception(data["errors"])
+
+    return data["data"]["order"]
+
 
 # updates a specific shopify order with completion status
 def update_order_completed(shopify_id, completed):
