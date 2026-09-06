@@ -52,10 +52,10 @@ def get_orders(limit=250):
     return response.json()["orders"]
 
 
-# TESTING:
+# TESTING / POLAROID:
 # Retrieves one Shopify order through GraphQL
-# and inspects Giftship Bundle Line Properties
-# through lineItemGroup.customAttributes
+# including both direct line item properties and
+# Giftship Bundle Line Properties
 def get_order_graphql(shopify_order_id):
     url = f"https://{SHOP}/admin/api/2026-01/graphql.json"
 
@@ -78,10 +78,11 @@ def get_order_graphql(shopify_order_id):
                     name
                     title
                     sku
+                    quantity
 
-                    image {
-                        url
-                        altText
+                    customAttributes {
+                        key
+                        value
                     }
 
                     lineItemGroup {
@@ -117,7 +118,7 @@ def get_order_graphql(shopify_order_id):
 
     data = response.json()
 
-    # GraphQL can return HTTP 200 even when the query has errors
+    # GraphQL may return HTTP 200 even when query contains errors
     if data.get("errors"):
         raise Exception(data["errors"])
 
