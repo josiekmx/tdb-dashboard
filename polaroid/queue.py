@@ -11,8 +11,8 @@ PHOTO_UPLOAD_KEY = "Photo Upload"
 
 def attributes_to_dict(attributes):
     """
-    Convert Shopify GraphQL customAttributes into
-    a normal Python dictionary.
+    Convert Shopify GraphQL customAttributes
+    into a normal Python dictionary.
     """
     return {
         attribute.get("key"): attribute.get("value")
@@ -23,8 +23,8 @@ def attributes_to_dict(attributes):
 
 def properties_to_dict(properties):
     """
-    Convert Shopify REST line item properties into
-    a normal Python dictionary.
+    Convert Shopify REST line item properties
+    into a normal Python dictionary.
     """
     return {
         prop.get("name"): prop.get("value")
@@ -60,8 +60,8 @@ def find_order_delivery_date(order):
     """
     Fallback delivery date for an order.
 
-    Uses the existing delivery-date logic in
-    order_processor.py.
+    Uses the existing delivery-date logic
+    in order_processor.py.
     """
     for item in order.get("line_items", []):
         date = get_delivery_date(order, item)
@@ -124,9 +124,8 @@ def has_possible_polaroid(order):
     """
     Cheap REST check before making a GraphQL request.
 
-    This prevents us from calling GraphQL for every
-    Shopify order when the order clearly contains
-    no Polaroid.
+    Prevents GraphQL calls for orders that clearly
+    contain no Polaroid.
     """
     for item in order.get("line_items", []):
         sku = str(item.get("sku") or "").lower()
@@ -143,7 +142,7 @@ def has_possible_polaroid(order):
         if sku == "polaroid":
             return True
 
-        # Polaroid encoded into a combined SKU
+        # Polaroid encoded into combined SKU
         if "polaroid" in sku:
             return True
 
@@ -171,23 +170,95 @@ def get_recipient(order):
     )
 
 
-def build_polaroid_queue():
+def create_queue_row(
+    order,
+    line_item_id,
+    bundle_group_id,
+    source,
+    photo_url,
+    delivery_date,
+    delivery_slot,
+):
     """
-    Build one normalised queue containing both:
+    Create one standard Polaroid queue row.
 
-    1. Direct / main-product Photo Uploads
-    2. Giftship bundled Photo Uploads
+    One row represents one actual Polaroid
+    that can be downloaded and printed.
+    """
+    return {
+        "shopify_id": order.get("id"),
+        "order": order.get("name"),
+        "recipient": get_recipient(order),
+        "delivery_date": delivery_date,
+        "delivery_slot": delivery_slot,
+        "line_item_id": line_item_id,
+        "bundle_group_id": bundle_group_id,
+        "source": source,
+        "photo_url": photo_url,
+        "downloadable": True,
+        "status": "Pending",
+    }
 
-    One returned row represents one unique uploaded photo.
+
+def create_diagnostic_row(
+    order,
+    line_item_id,
+    bundle_group_id,
+    source,
+    photo_value,
+    reason,
+):
+    """
+    Store a possible Polaroid that could not
+    be resolved into a downloadable URL.
+
+    Diagnostics do NOT count toward the print queue.
+    """
+    return {
+        "shopify_id": order.get("id"),
+        "order": order.get("name"),
+        "recipient": get_recipient(order),
+        "line_item_id": line_item_id,
+        "bundle_group_id": bundle_group_id,
+        "source": source,
+        "photo_value": photo_value,
+        "reason": reason,
+    }
+
+
+def build_polaroid_results():
+    """
+    Build Polaroid detection results.
+
+    Returns:
+        {
+            "queue": [...],
+            "diagnostics": [...]
+        }
+
+    queue:
+        Only real, downloadable Polaroids.
+
+    diagnostics:
+        Possible Polaroid properties that could not
+        be resolved into a full URL.
+
+    Supports both:
+        1. Direct / main-product Photo Uploads
+        2. Giftship bundled Photo Uploads
     """
 
     orders = get_orders()
 
     queue = []
+    diagnostics = []
 
-    # Used to stop one Giftship bundle appearing multiple
-    # times because multiple line items can share a group.
-    seen_photos = set()
+    # Prevent duplicated Giftship groups.
+    seen_bundle_photos = set()
+
+    # Prevent the same direct line-item photo
+    # from being added more than once.
+    seen_direct_photos = set()
 
     for order in orders:
 
@@ -196,22 +267,20 @@ def build_polaroid_queue():
             continue
 
         try:
-            graphql_order = get_order_graphql(order["id"])
+            graphql_order = get_order_graphql(
+                order["id"]
+            )
+
         except Exception as e:
-            queue.append({
+            diagnostics.append({
                 "shopify_id": order.get("id"),
                 "order": order.get("name"),
                 "recipient": get_recipient(order),
-                "delivery_date": find_order_delivery_date(order),
-                "delivery_slot": find_order_delivery_slot(order),
                 "line_item_id": None,
                 "bundle_group_id": None,
-                "source": "ERROR",
-                "photo_url": None,
+                "source": "GraphQL",
                 "photo_value": None,
-                "downloadable": False,
-                "status": "Error",
-                "error": str(e),
+                "reason": str(e),
             })
 
             continue
@@ -222,13 +291,20 @@ def build_polaroid_queue():
             .get("nodes", [])
         )
 
-        rest_line_items = build_rest_line_item_map(order)
+        rest_line_items = build_rest_line_item_map(
+            order
+        )
 
         for graphql_item in graphql_line_items:
-            graphql_line_item_id = graphql_item.get("id")
 
-            numeric_line_item_id = get_numeric_line_item_id(
-                graphql_line_item_id
+            graphql_line_item_id = (
+                graphql_item.get("id")
+            )
+
+            numeric_line_item_id = (
+                get_numeric_line_item_id(
+                    graphql_line_item_id
+                )
             )
 
             rest_item = rest_line_items.get(
@@ -241,7 +317,10 @@ def build_polaroid_queue():
             )
 
             direct_attributes = attributes_to_dict(
-                graphql_item.get("customAttributes", [])
+                graphql_item.get(
+                    "customAttributes",
+                    []
+                )
             )
 
             line_item_group = (
@@ -250,72 +329,113 @@ def build_polaroid_queue():
             )
 
             bundle_attributes = attributes_to_dict(
-                line_item_group.get("customAttributes", [])
+                line_item_group.get(
+                    "customAttributes",
+                    []
+                )
             )
 
-            # -------------------------------------------------
+            # ---------------------------------------------
             # TYPE 1:
             # Giftship bundle Photo Upload
-            # -------------------------------------------------
+            # ---------------------------------------------
 
             bundle_photo = bundle_attributes.get(
                 PHOTO_UPLOAD_KEY
             )
 
             if bundle_photo:
-                bundle_group_id = line_item_group.get("id")
+                bundle_group_id = (
+                    line_item_group.get("id")
+                )
 
-                # Multiple line items may point to the same group,
-                # so deduplicate using the group + photo.
-                unique_key = (
+                bundle_unique_key = (
                     str(order.get("id")),
                     str(bundle_group_id),
                     str(bundle_photo),
                 )
 
-                if unique_key not in seen_photos:
-                    seen_photos.add(unique_key)
-
-                    delivery_date = (
-                        find_attribute_delivery_date(
-                            bundle_attributes
-                        )
-                        or find_order_delivery_date(order)
+                if (
+                    bundle_unique_key
+                    not in seen_bundle_photos
+                ):
+                    seen_bundle_photos.add(
+                        bundle_unique_key
                     )
 
-                    delivery_slot = (
-                        find_attribute_delivery_slot(
-                            bundle_attributes
+                    if is_full_url(bundle_photo):
+
+                        delivery_date = (
+                            find_attribute_delivery_date(
+                                bundle_attributes
+                            )
+                            or find_order_delivery_date(
+                                order
+                            )
                         )
-                        or find_order_delivery_slot(order)
-                    )
 
-                    queue.append({
-                        "shopify_id": order.get("id"),
-                        "order": order.get("name"),
-                        "recipient": get_recipient(order),
-                        "delivery_date": delivery_date,
-                        "delivery_slot": delivery_slot,
-                        "line_item_id": numeric_line_item_id,
-                        "bundle_group_id": bundle_group_id,
-                        "source": "Bundle",
-                        "photo_url": (
-                            bundle_photo
-                            if is_full_url(bundle_photo)
-                            else None
-                        ),
-                        "photo_value": bundle_photo,
-                        "downloadable": is_full_url(
-                            bundle_photo
-                        ),
-                        "status": "Pending",
-                        "error": None,
-                    })
+                        delivery_slot = (
+                            find_attribute_delivery_slot(
+                                bundle_attributes
+                            )
+                            or find_order_delivery_slot(
+                                order
+                            )
+                        )
 
-            # -------------------------------------------------
+                        queue.append(
+                            create_queue_row(
+                                order=order,
+                                line_item_id=(
+                                    numeric_line_item_id
+                                ),
+                                bundle_group_id=(
+                                    bundle_group_id
+                                ),
+                                source="Bundle",
+                                photo_url=bundle_photo,
+                                delivery_date=(
+                                    delivery_date
+                                ),
+                                delivery_slot=(
+                                    delivery_slot
+                                ),
+                            )
+                        )
+
+                    else:
+                        diagnostics.append(
+                            create_diagnostic_row(
+                                order=order,
+                                line_item_id=(
+                                    numeric_line_item_id
+                                ),
+                                bundle_group_id=(
+                                    bundle_group_id
+                                ),
+                                source="Bundle",
+                                photo_value=(
+                                    bundle_photo
+                                ),
+                                reason=(
+                                    "Bundle Photo Upload "
+                                    "is not a full URL."
+                                ),
+                            )
+                        )
+
+                # IMPORTANT:
+                # This line item already has its Polaroid
+                # represented by the Giftship bundle.
+                #
+                # Do not also create a Direct Polaroid row
+                # from the same item.
+                continue
+
+            # ---------------------------------------------
             # TYPE 2:
             # Direct / main-product Photo Upload
-            # -------------------------------------------------
+            # ---------------------------------------------
 
             direct_photo = direct_attributes.get(
                 PHOTO_UPLOAD_KEY
@@ -325,73 +445,141 @@ def build_polaroid_queue():
                 PHOTO_UPLOAD_KEY
             )
 
-            # Prefer GraphQL value first.
-            # Fall back to REST if necessary.
+            # Prefer GraphQL because this may contain
+            # the full CDN URL.
             direct_photo_value = (
                 direct_photo
                 or rest_photo
             )
 
-            if direct_photo_value:
-                unique_key = (
-                    str(order.get("id")),
-                    str(numeric_line_item_id),
-                    str(direct_photo_value),
+            if not direct_photo_value:
+                continue
+
+            direct_unique_key = (
+                str(order.get("id")),
+                str(numeric_line_item_id),
+                str(direct_photo_value),
+            )
+
+            if (
+                direct_unique_key
+                in seen_direct_photos
+            ):
+                continue
+
+            seen_direct_photos.add(
+                direct_unique_key
+            )
+
+            # Only a resolved URL belongs
+            # in the real printing queue.
+            if not is_full_url(
+                direct_photo_value
+            ):
+                diagnostics.append(
+                    create_diagnostic_row(
+                        order=order,
+                        line_item_id=(
+                            numeric_line_item_id
+                        ),
+                        bundle_group_id=None,
+                        source="Direct",
+                        photo_value=(
+                            direct_photo_value
+                        ),
+                        reason=(
+                            "Direct Photo Upload "
+                            "is not a full URL."
+                        ),
+                    )
                 )
 
-                if unique_key not in seen_photos:
-                    seen_photos.add(unique_key)
+                continue
 
-                    delivery_date = (
-                        find_attribute_delivery_date(
-                            direct_attributes
-                        )
-                        or standardise_date(
-                            get_delivery_date(
-                                order,
-                                rest_item
-                            )
-                        )
-                        or find_order_delivery_date(order)
+            delivery_date = (
+                find_attribute_delivery_date(
+                    direct_attributes
+                )
+                or standardise_date(
+                    get_delivery_date(
+                        order,
+                        rest_item
                     )
+                )
+                or find_order_delivery_date(
+                    order
+                )
+            )
 
-                    delivery_slot = (
-                        find_attribute_delivery_slot(
-                            direct_attributes
-                        )
-                        or (
-                            get_delivery_slot(
-                                order,
-                                rest_item
-                            )
-                            if rest_item
-                            else None
-                        )
-                        or find_order_delivery_slot(order)
+            delivery_slot = (
+                find_attribute_delivery_slot(
+                    direct_attributes
+                )
+                or (
+                    get_delivery_slot(
+                        order,
+                        rest_item
                     )
+                    if rest_item
+                    else None
+                )
+                or find_order_delivery_slot(
+                    order
+                )
+            )
 
-                    queue.append({
-                        "shopify_id": order.get("id"),
-                        "order": order.get("name"),
-                        "recipient": get_recipient(order),
-                        "delivery_date": delivery_date,
-                        "delivery_slot": delivery_slot,
-                        "line_item_id": numeric_line_item_id,
-                        "bundle_group_id": None,
-                        "source": "Direct",
-                        "photo_url": (
-                            direct_photo_value
-                            if is_full_url(
-                                direct_photo_value
-                            )
-                            else None
-                        ),
-                        "photo_value": direct_photo_value,
-                        "downloadable": is_full_url(
-                            direct_photo_value
-                        ),
-                        "status": "Pending",
-                        "error": None,
-                    })
+            queue.append(
+                create_queue_row(
+                    order=order,
+                    line_item_id=(
+                        numeric_line_item_id
+                    ),
+                    bundle_group_id=None,
+                    source="Direct",
+                    photo_url=(
+                        direct_photo_value
+                    ),
+                    delivery_date=(
+                        delivery_date
+                    ),
+                    delivery_slot=(
+                        delivery_slot
+                    ),
+                )
+            )
 
-    return queue
+    return {
+        "queue": queue,
+        "diagnostics": diagnostics,
+    }
+
+
+def build_polaroid_queue():
+    """
+    Returns only actual downloadable Polaroids.
+
+    This is the list that should eventually drive:
+
+        Required
+        Pending
+        Downloaded
+        Printed
+
+    Therefore:
+        1 row = 1 physical Polaroid to print.
+    """
+    results = build_polaroid_results()
+
+    return results["queue"]
+
+
+def build_polaroid_diagnostics():
+    """
+    Returns unresolved / abnormal Polaroid records
+    for testing and troubleshooting.
+
+    These must never count toward the printing total.
+    """
+    results = build_polaroid_results()
+
+    return results["diagnostics"]
