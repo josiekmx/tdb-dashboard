@@ -11,6 +11,7 @@ from detrack.order_builder import build_delivery_orders
 from detrack.sku_mapping import get_sku_tag_mapping
 from detrack.tag_calculator import calculate_tags
 from detrack.validator import validate_order
+from polaroid.queue import build_polaroid_queue
 
 
 # ----------------------- TESTING CODE -----------------------
@@ -222,6 +223,24 @@ def display_polaroid_test():
 
     except Exception as e:
         st.error(f"GraphQL test failed: {e}")
+
+    # ---------------- POLAROID QUEUE TEST ----------------
+
+    st.divider()
+    st.subheader("Polaroid Queue Test")
+
+    if st.button("Build Polaroid Queue"):
+        queue = build_polaroid_queue()
+
+        st.write(f"**Polaroids detected:** {len(queue)}")
+
+        if not queue:
+            st.warning("No Polaroids detected.")
+        else:
+            st.dataframe(
+                queue,
+                use_container_width=True
+            )    
 
 
 # ----------------------- ORIGINAL CODE BELOW -----------------------
