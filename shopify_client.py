@@ -4,8 +4,8 @@ import streamlit as st
 SHOP = st.secrets["SHOP"]
 TOKEN = st.secrets["TOKEN"]
 
-# WARNING: currently limits order retrieval to 250 open orders 
-# as this is the maximum number of records that can be retrieved 
+# WARNING: currently limits order retrieval to 250 open orders
+# as this is the maximum number of records that can be retrieved
 # per request using REST Admin API. Fulfilled, archived, or cancelled
 # orders will not be retrieved
 
@@ -24,15 +24,18 @@ ASSIGNEES = {
 
 ASSIGNEE_TAG_PREFIX = "tdb_assignee_"
 
-# retrieves orders from shopify database
+
+# Retrieves orders from Shopify database
 # and returns the latest 250 open orders created
-# in json format
+# in JSON format
 def get_orders(limit=250):
     url = f"https://{SHOP}/admin/api/2026-01/orders.json"
+
     headers = {
         "X-Shopify-Access-Token": TOKEN,
         "Content-Type": "application/json"
     }
+
     params = {
         "status": "open",
         "limit": limit
@@ -43,12 +46,16 @@ def get_orders(limit=250):
         headers=headers,
         params=params
     )
+
     response.raise_for_status()
 
     return response.json()["orders"]
 
-# TESTING: retrieves one Shopify order through GraphQL
-# to inspect line item custom attributes
+
+# TESTING:
+# Retrieves one Shopify order through GraphQL
+# and inspects Giftship Bundle Line Properties
+# through lineItemGroup.customAttributes
 def get_order_graphql(shopify_order_id):
     url = f"https://{SHOP}/admin/api/2026-01/graphql.json"
 
@@ -65,16 +72,27 @@ def get_order_graphql(shopify_order_id):
             id
             name
 
-            lineItems(first: 50) {
+            lineItems(first: 100) {
                 nodes {
                     id
                     name
                     title
                     sku
 
-                    customAttributes {
-                        key
-                        value
+                    image {
+                        url
+                        altText
+                    }
+
+                    lineItemGroup {
+                        id
+                        title
+                        quantity
+
+                        customAttributes {
+                            key
+                            value
+                        }
                     }
                 }
             }
@@ -106,35 +124,49 @@ def get_order_graphql(shopify_order_id):
     return data["data"]["order"]
 
 
-# updates a specific shopify order with completion status
+# Updates a specific Shopify order with completion status
 def update_order_completed(shopify_id, completed):
     url = f"https://{SHOP}/admin/api/2026-01/orders/{shopify_id}.json"
+
     headers = {
         "X-Shopify-Access-Token": TOKEN,
         "Content-Type": "application/json"
     }
 
-    # retrieves the most updated order data for a specific order 
-    # based on the given shopify id
+    # Retrieves the most updated order data for a specific order
+    # based on the given Shopify ID
     response = requests.get(
         url,
         headers=headers
     )
-    response.raise_for_status()
-    order = response.json()["order"]
-    tags = [tag.strip() for tag in order["tags"].split(",") if tag.strip()]
 
-    # if order is to be marked as completed,
-    # attach a completed tag to the order
-    # otherwise, remove any existing completed tag from the order
+    response.raise_for_status()
+
+    order = response.json()["order"]
+
+    tags = [
+        tag.strip()
+        for tag in order["tags"].split(",")
+        if tag.strip()
+    ]
+
+    # If order is to be marked as completed,
+    # attach a completed tag to the order.
+    # Otherwise remove any existing completed tag.
     COMPLETED_TAG = "tdb_completed"
+
     if completed:
         if COMPLETED_TAG not in tags:
             tags.append(COMPLETED_TAG)
     else:
-        tags = [tag for tag in tags if tag != COMPLETED_TAG]
+        tags = [
+            tag
+            for tag in tags
+            if tag != COMPLETED_TAG
+        ]
 
     updated_tags = ", ".join(tags)
+
     payload = {
         "order": {
             "id": shopify_id,
@@ -142,7 +174,8 @@ def update_order_completed(shopify_id, completed):
         }
     }
 
-    # update specific order on shopify with the new updated tag list
+    # Update specific order on Shopify
+    # with the new updated tag list
     response = requests.put(
         url,
         headers=headers,
@@ -150,17 +183,18 @@ def update_order_completed(shopify_id, completed):
     )
 
     response.raise_for_status()
+
     return True
 
-# updates a specific shopify order with an assignee
+
+# Updates a specific Shopify order with an assignee
 def update_order_assignee(shopify_id, assignee):
-        
     url = f"https://{SHOP}/admin/api/2026-01/orders/{shopify_id}.json"
-        
+
     headers = {
         "X-Shopify-Access-Token": TOKEN,
         "Content-Type": "application/json"
-    } 
+    }
 
     # Validate before making any Shopify write
     if assignee is not None and assignee not in ASSIGNEES:
@@ -181,11 +215,12 @@ def update_order_assignee(shopify_id, assignee):
         tag.strip()
         for tag in order.get("tags", "").split(",")
         if tag.strip()
-        ]
+    ]
 
     # Remove only existing assignee tag
     tags = [
-        tag for tag in tags
+        tag
+        for tag in tags
         if not tag.startswith(ASSIGNEE_TAG_PREFIX)
     ]
 
@@ -197,8 +232,8 @@ def update_order_assignee(shopify_id, assignee):
 
     payload = {
         "order": {
-        "id": shopify_id,
-        "tags": updated_tags
+            "id": shopify_id,
+            "tags": updated_tags
         }
     }
 
@@ -210,6 +245,4 @@ def update_order_assignee(shopify_id, assignee):
 
     response.raise_for_status()
 
-    return True   
-        
-    
+    return True
