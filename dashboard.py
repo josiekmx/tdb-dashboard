@@ -769,7 +769,6 @@ def display_polaroid_printing():
                 ),
                 mime="application/zip",
                 type="primary",
-                use_container_width=True,
                 key="download_polaroid_zip"
             )
 
