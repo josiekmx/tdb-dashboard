@@ -487,7 +487,9 @@ def display_polaroid_printing():
 
             # Placeholder until persistent
             # download history is added.
-            "Last Downloaded": "—",
+            "Purchased At": format_purchase_time(
+                polaroid.get("purchased_at")
+            ),
 
             "Order": polaroid.get(
                 "order"

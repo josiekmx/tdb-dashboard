@@ -186,6 +186,7 @@ def create_queue_row(
     that can be downloaded and printed.
     """
     return {
+        "purchased_at": order.get("created_at"),
         "shopify_id": order.get("id"),
         "order": order.get("name"),
         "recipient": get_recipient(order),
