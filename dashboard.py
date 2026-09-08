@@ -305,15 +305,10 @@ def prepare_selected_polaroids(polaroids, delivery_date):
 def display_polaroid_printing():
     st.subheader("Polaroid Printing")
 
-    st.caption(
-        "Select a delivery date and choose the "
-        "Polaroids for this print run."
-    )
-
     # ---------------- REFRESH QUEUE ----------------
 
     if st.button(
-        "Refresh Polaroid Queue",
+        "Load Polaroid Queue",
         type="primary",
         key="refresh_polaroid_queue"
     ):
@@ -355,6 +350,7 @@ def display_polaroid_printing():
         return
 
     # ---------------- DELIVERY DATE ----------------
+
 
     delivery_dates = sorted({
         str(polaroid.get("delivery_date"))
@@ -399,6 +395,8 @@ def display_polaroid_printing():
 
     # ---------------- SELECTION STATE ----------------
 
+    st.subheader("Select Orders")
+
     current_date_state = (
         st.session_state.get(
             "polaroid_selection_date"
@@ -439,6 +437,8 @@ def display_polaroid_printing():
     ])
 
     # ---------------- BULK CONTROLS ----------------
+
+
 
     bulk_col_1, bulk_col_2, bulk_col_3 = (
         st.columns([1.4, 1, 4])
