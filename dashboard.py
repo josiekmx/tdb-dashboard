@@ -436,60 +436,7 @@ def display_polaroid_printing():
         )
     )
 
-    # ---------------- METRICS ----------------
 
-    required_count = len(
-        date_polaroids
-    )
-
-    # Persistence comes in the next phase.
-    printed_count = 0
-
-    pending_count = (
-        required_count
-        - printed_count
-    )
-
-    selected_count = len([
-        polaroid
-        for polaroid in date_polaroids
-        if get_polaroid_id(
-            polaroid
-        ) in selected_ids
-    ])
-
-    (
-        required_col,
-        printed_col,
-        pending_col,
-        selected_col
-    ) = st.columns(4)
-
-    with required_col:
-        st.metric(
-            "Required",
-            required_count
-        )
-
-    with printed_col:
-        st.metric(
-            "Printed",
-            printed_count
-        )
-
-    with pending_col:
-        st.metric(
-            "Pending",
-            pending_count
-        )
-
-    with selected_col:
-        st.metric(
-            "Selected",
-            selected_count
-        )
-
-    st.divider()
 
     # ---------------- BULK CONTROLS ----------------
 
