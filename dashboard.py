@@ -346,10 +346,6 @@ def display_polaroid_printing():
     )
 
     if queue is None:
-        st.info(
-            "Click Refresh Polaroid Queue "
-            "to load current Polaroid orders."
-        )
         return
 
     if not queue:
