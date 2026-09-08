@@ -2,19 +2,19 @@ import io
 import re
 import zipfile
 
+import pandas as pd
 import requests
 import streamlit as st
 
 from components.authentication import check_password
 from components.order_details_table import display_order_details_table
 from components.order_summary_tables import display_order_summary_tables
-from components.detrack_sync import display_detrack_sync
+from components.detrack_sync import display_detrack_sync, style_status
 
 from shopify_client import get_orders, get_order_graphql
 from polaroid.queue import build_polaroid_queue
 from datetime import datetime
 from detrack.client import get_existing_detrack_order_numbers
-from components.detrack_sync import style_status
 
 
 # ----------------------- POLAROID HELPERS -----------------------
@@ -338,21 +338,7 @@ def display_polaroid_printing():
         st.info("No upcoming Polaroids.")
         return
 
-        queue = st.session_state.get(
-            "polaroid_queue"
-        )
-
-        if queue is None:
-            return
-
-        if not queue:
-            st.success(
-                "No Polaroids currently detected."
-            )
-            return
-
     # ---------------- DELIVERY DATE ----------------
-
 
     delivery_dates = sorted({
         str(polaroid.get("delivery_date"))
@@ -373,13 +359,14 @@ def display_polaroid_printing():
         key="polaroid_delivery_date"
     )
 
-    # Check which orders already exist in Detrack
+    # Check which orders already exist in Detrack.
     try:
-        existing_detrack_orders = (
-            get_existing_detrack_order_numbers(
+        existing_detrack_orders = {
+            str(order_number)
+            for order_number in get_existing_detrack_order_numbers(
                 selected_date
             )
-        )
+        }
     except Exception:
         existing_detrack_orders = set()
 
@@ -391,9 +378,7 @@ def display_polaroid_printing():
         ) == selected_date
     ]
 
-
-
-    # Sort table by Shopify order number.
+    # Latest Shopify orders appear at the top of the table.
     date_polaroids = sorted(
         date_polaroids,
         key=lambda row: get_order_number(
@@ -404,8 +389,6 @@ def display_polaroid_printing():
 
     # ---------------- SELECTION STATE ----------------
 
-    st.subheader("Select Orders")
-
     current_date_state = (
         st.session_state.get(
             "polaroid_selection_date"
@@ -414,8 +397,7 @@ def display_polaroid_printing():
 
     if current_date_state != selected_date:
 
-        # For now every detected Polaroid is Pending,
-        # so preselect all Pending Polaroids.
+        # Preselect all Polaroids for the selected date.
         st.session_state[
             "polaroid_selected_ids"
         ] = {
@@ -445,11 +427,16 @@ def display_polaroid_printing():
         if get_polaroid_id(polaroid) in selected_ids
     ])
 
+    st.subheader(
+        f"{selected_count} "
+        f"Polaroid"
+        f"{'s' if selected_count != 1 else ''} "
+        f"Selected"
+    )
+
     # ---------------- BULK CONTROLS ----------------
 
-
-
-    bulk_col_1, bulk_col_2, bulk_col_3 = (
+    bulk_col_1, bulk_col_2, _ = (
         st.columns([1.4, 1, 4])
     )
 
@@ -493,12 +480,6 @@ def display_polaroid_printing():
 
             st.rerun()
 
-    # with bulk_col_3:
-    #    st.markdown(
-    #        f"**{selected_count} selected**"
-    #    ) 
-
-
     # ---------------- SELECTABLE TABLE ----------------
 
     table_rows = []
@@ -508,7 +489,9 @@ def display_polaroid_printing():
             polaroid
         )
 
-        order_number = polaroid.get("order")
+        order_number = str(
+            polaroid.get("order") or ""
+        )
 
         detrack_status = (
             "UPLOADED"
@@ -522,14 +505,8 @@ def display_polaroid_printing():
                 in selected_ids
             ),
 
-            detrack_status = (
-                "UPLOADED"
-                if order_number in existing_detrack_orders
-                else "PENDING"
-            ),
+            "Detrack Status": detrack_status,
 
-            # Placeholder until persistent
-            # download history is added.
             "Purchased At": format_purchase_time(
                 polaroid.get("purchased_at")
             ),
@@ -542,18 +519,20 @@ def display_polaroid_printing():
                 "recipient"
             ),
 
-            "Slot": polaroid.get(
-                "delivery_slot"
-            ),
-
-            "Status": "Pending",
-
             # Hidden working ID.
             "_polaroid_id": polaroid_id,
         })
 
+    table_df = pd.DataFrame(table_rows)
+
+    # Reuse the same Detrack status colour scheme.
+    styled_table = table_df.style.map(
+        style_status,
+        subset=["Detrack Status"]
+    )
+
     edited_rows = st.data_editor(
-        table_rows,
+        styled_table,
         use_container_width=True,
         hide_index=True,
         key=(
@@ -562,10 +541,9 @@ def display_polaroid_printing():
         ),
         disabled=[
             "Detrack Status",
+            "Purchased At",
             "Order",
             "Recipient",
-            "Slot",
-            "Status",
             "_polaroid_id",
         ],
         column_config={
@@ -578,9 +556,15 @@ def display_polaroid_printing():
                 default=False,
             ),
 
-            "Last Downloaded": (
+            "Detrack Status": (
                 st.column_config.TextColumn(
-                    "Last Downloaded"
+                    "Detrack Status"
+                )
+            ),
+
+            "Purchased At": (
+                st.column_config.TextColumn(
+                    "Purchased At"
                 )
             ),
 
@@ -596,18 +580,6 @@ def display_polaroid_printing():
                 )
             ),
 
-            "Slot": (
-                st.column_config.TextColumn(
-                    "Slot"
-                )
-            ),
-
-            "Status": (
-                st.column_config.TextColumn(
-                    "Status"
-                )
-            ),
-
             "_polaroid_id": None,
         }
     )
@@ -616,8 +588,8 @@ def display_polaroid_printing():
 
     new_selected_ids = {
         row["_polaroid_id"]
-        for row in edited_rows
-        if row.get("Select")
+        for _, row in edited_rows.iterrows()
+        if bool(row.get("Select"))
     }
 
     if new_selected_ids != selected_ids:
@@ -647,15 +619,6 @@ def display_polaroid_printing():
     )
 
     # ---------------- DOWNLOAD AREA ----------------
-
-    st.divider()
-
-    st.markdown(
-        f"## {selected_count} "
-        f"Polaroid"
-        f"{'s' if selected_count != 1 else ''} "
-        f"Selected"
-    )
 
     st.caption(
         "Only selected rows will be included "
@@ -755,22 +718,22 @@ def display_polaroid_printing():
             )
 
         st.download_button(
-                label=(
-                    f"Download "
-                    f"{successful_count} "
-                    f"Polaroid"
-                    f"{'s' if successful_count != 1 else ''}"
-                ),
-                data=batch_result["bytes"],
-                file_name=(
-                    batch_result[
-                        "filename"
-                    ]
-                ),
-                mime="application/zip",
-                type="primary",
-                key="download_polaroid_zip"
-            )    
+            label=(
+                f"Download "
+                f"{successful_count} "
+                f"Polaroid"
+                f"{'s' if successful_count != 1 else ''}"
+            ),
+            data=batch_result["bytes"],
+            file_name=(
+                batch_result[
+                    "filename"
+                ]
+            ),
+            mime="application/zip",
+            type="primary",
+            key="download_polaroid_zip"
+        )
 
 
 # ----------------------- POLAROID TESTING -----------------------
