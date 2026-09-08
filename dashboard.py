@@ -696,7 +696,6 @@ def display_polaroid_printing():
             f"{'s' if selected_count != 1 else ''}"
         ),
         type="primary",
-        use_container_width=True,
         disabled=(selected_count == 0),
         key="prepare_selected_polaroids"
     ):
