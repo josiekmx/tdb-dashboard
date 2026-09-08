@@ -680,7 +680,7 @@ def display_polaroid_printing():
     st.markdown(
         f"## {selected_count} "
         f"Polaroid"
-        f"{'S' if selected_count != 1 else ''} "
+        f"{'s' if selected_count != 1 else ''} "
         f"Selected"
     )
 
