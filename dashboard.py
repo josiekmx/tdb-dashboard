@@ -305,49 +305,30 @@ def prepare_selected_polaroids(polaroids, delivery_date):
 def display_polaroid_printing():
     st.subheader("Polaroid Printing")
 
-    # ---------------- REFRESH QUEUE ----------------
+    # ---------------- LOAD QUEUE ----------------
 
-    if st.button(
-        "Load Polaroid Queue",
-        type="primary",
-        key="refresh_polaroid_queue"
-    ):
-        with st.spinner(
-            "Checking Shopify for Polaroids..."
-        ):
-            st.session_state[
-                "polaroid_queue"
-            ] = build_polaroid_queue()
+    if "polaroid_queue" not in st.session_state:
+        with st.spinner("Loading Polaroids..."):
+            st.session_state["polaroid_queue"] = build_polaroid_queue()
 
-        # Queue may have changed, so clear
-        # previous selection and prepared ZIP.
-        st.session_state.pop(
-            "polaroid_selected_ids",
-            None
-        )
-
-        st.session_state.pop(
-            "polaroid_selection_date",
-            None
-        )
-
-        st.session_state.pop(
-            "polaroid_batch_zip",
-            None
-        )
-
-    queue = st.session_state.get(
-        "polaroid_queue"
-    )
-
-    if queue is None:
-        return
+    queue = st.session_state["polaroid_queue"]
 
     if not queue:
-        st.success(
-            "No Polaroids currently detected."
-        )
+        st.info("No upcoming Polaroids.")
         return
+
+        queue = st.session_state.get(
+            "polaroid_queue"
+        )
+
+        if queue is None:
+            return
+
+        if not queue:
+            st.success(
+                "No Polaroids currently detected."
+            )
+            return
 
     # ---------------- DELIVERY DATE ----------------
 
