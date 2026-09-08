@@ -13,6 +13,8 @@ from components.detrack_sync import display_detrack_sync
 from shopify_client import get_orders, get_order_graphql
 from polaroid.queue import build_polaroid_queue
 from datetime import datetime
+from detrack.client import get_existing_detrack_order_numbers
+from components.detrack_sync import style_status
 
 
 # ----------------------- POLAROID HELPERS -----------------------
@@ -371,6 +373,16 @@ def display_polaroid_printing():
         key="polaroid_delivery_date"
     )
 
+    # Check which orders already exist in Detrack
+    try:
+        existing_detrack_orders = (
+            get_existing_detrack_order_numbers(
+                selected_date
+            )
+        )
+    except Exception:
+        existing_detrack_orders = set()
+
     date_polaroids = [
         polaroid
         for polaroid in queue
@@ -378,6 +390,8 @@ def display_polaroid_printing():
             polaroid.get("delivery_date")
         ) == selected_date
     ]
+
+
 
     # Sort table by Shopify order number.
     date_polaroids = sorted(
@@ -494,13 +508,25 @@ def display_polaroid_printing():
             polaroid
         )
 
+        order_number = polaroid.get("order")
+
+        detrack_status = (
+            "UPLOADED"
+            if order_number in existing_detrack_orders
+            else "PENDING"
+        )
+
         table_rows.append({
             "Select": (
                 polaroid_id
                 in selected_ids
             ),
 
-            "Detrack Status": detrack_status,
+            detrack_status = (
+                "UPLOADED"
+                if order_number in existing_detrack_orders
+                else "PENDING"
+            ),
 
             # Placeholder until persistent
             # download history is added.
