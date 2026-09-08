@@ -699,14 +699,6 @@ def display_polaroid_printing():
                 f"ready for download."
             )
 
-
-            st.info(
-                f"{successful_count} files "
-                f"in this ZIP → "
-                f"You should print "
-                f"{successful_count} Polaroids."
-            )
-
         if failed_count:
             st.error(
                 f"{failed_count} Polaroid"
