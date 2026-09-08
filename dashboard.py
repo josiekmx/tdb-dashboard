@@ -299,6 +299,25 @@ def prepare_selected_polaroids(polaroids, delivery_date):
         "failed": failed,
     }
 
+def format_purchase_time(value):
+    """
+    Format Shopify order creation time for display.
+    """
+
+    if not value:
+        return "—"
+
+    try:
+        dt = datetime.fromisoformat(
+            str(value).replace("Z", "+00:00")
+        )
+
+        return dt.strftime(
+            "%d %b %Y, %I:%M %p"
+        ).lstrip("0")
+
+    except Exception:
+        return str(value)
 
 # ----------------------- POLAROID PRINTING -----------------------
 
