@@ -382,15 +382,10 @@ def display_polaroid_printing():
     # Sort table by Shopify order number.
     date_polaroids = sorted(
         date_polaroids,
-        key=lambda row: (
-            get_order_number(
-                row.get("order")
-            ),
-            str(
-                row.get("line_item_id")
-                or ""
-            ),
-        )
+        key=lambda row: get_order_number(
+            row.get("order")
+        ),
+        reverse=True
     )
 
     # ---------------- SELECTION STATE ----------------
