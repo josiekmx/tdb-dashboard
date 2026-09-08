@@ -479,10 +479,11 @@ def display_polaroid_printing():
 
             st.rerun()
 
-    with bulk_col_3:
-        st.markdown(
-            f"**{selected_count} selected**"
-        )
+    # with bulk_col_3:
+    #    st.markdown(
+    #        f"**{selected_count} selected**"
+    #    ) 
+
 
     # ---------------- SELECTABLE TABLE ----------------
 
