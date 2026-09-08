@@ -1394,8 +1394,7 @@ with refresh_col:
 (
     orders_tab,
     detrack_tab,
-    polaroid_tab,
-    polaroid_test_tab
+    polaroid_tab
 ) = st.tabs([
     "Orders",
     "Detrack Sync",
