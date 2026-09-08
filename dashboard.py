@@ -1,6 +1,6 @@
 import io
+import re
 import zipfile
-from datetime import datetime
 
 import requests
 import streamlit as st
@@ -15,11 +15,11 @@ from shopify_client import get_orders, get_order_graphql
 from polaroid.queue import build_polaroid_queue
 
 
-# ----------------------- HELPERS -----------------------
+# ----------------------- POLAROID HELPERS -----------------------
 
 def get_image_extension(content_type, photo_url):
     """
-    Determine a suitable file extension for a downloaded image.
+    Determine a suitable extension for a downloaded image.
     """
 
     content_type = (
@@ -41,7 +41,6 @@ def get_image_extension(content_type, photo_url):
     if content_type in extension_map:
         return extension_map[content_type]
 
-    # Fallback to URL extension
     clean_url = str(photo_url or "").split("?")[0].lower()
 
     for extension in [
@@ -53,14 +52,17 @@ def get_image_extension(content_type, photo_url):
         "heif",
     ]:
         if clean_url.endswith(f".{extension}"):
-            return "jpg" if extension == "jpeg" else extension
+            if extension == "jpeg":
+                return "jpg"
+
+            return extension
 
     return "jpg"
 
 
 def clean_filename_part(value):
     """
-    Convert a value into a safe filename component.
+    Convert text into a safe filename component.
     """
 
     value = str(value or "").strip()
@@ -86,12 +88,44 @@ def clean_filename_part(value):
     return value or "Unknown"
 
 
+def get_order_number(order_name):
+    """
+    Extract numeric portion from an order name.
+
+    Example:
+        #TDB94103 -> 94103
+    """
+
+    match = re.search(
+        r"(\d+)",
+        str(order_name or "")
+    )
+
+    if not match:
+        return 999999999
+
+    return int(match.group(1))
+
+
+def get_polaroid_id(polaroid):
+    """
+    Create a stable identifier for one Polaroid queue row.
+
+    One separate upload record = one Polaroid.
+    """
+
+    return "|".join([
+        str(polaroid.get("shopify_id") or ""),
+        str(polaroid.get("line_item_id") or ""),
+        str(polaroid.get("bundle_group_id") or ""),
+        str(polaroid.get("source") or ""),
+        str(polaroid.get("photo_url") or ""),
+    ])
+
+
 def build_polaroid_filename(polaroid, sequence):
     """
     Build a unique filename for one Polaroid.
-
-    Sequence is included because one Shopify order
-    can contain more than one separate photo upload.
     """
 
     order_name = clean_filename_part(
@@ -117,11 +151,6 @@ def build_polaroid_filename(polaroid, sequence):
 def fetch_polaroid_image(photo_url):
     """
     Download one Polaroid image from Shopify CDN.
-
-    Returns:
-        image_bytes,
-        content_type,
-        extension
     """
 
     response = requests.get(
@@ -141,7 +170,7 @@ def fetch_polaroid_image(photo_url):
 
     if not content_type.startswith("image/"):
         raise ValueError(
-            f"URL did not return an image. "
+            "URL did not return an image. "
             f"Content-Type: {content_type}"
         )
 
@@ -164,13 +193,30 @@ def fetch_polaroid_image(photo_url):
     )
 
 
-def build_polaroid_zip(polaroids, delivery_date):
+def prepare_selected_polaroids(polaroids, delivery_date):
     """
-    Download all supplied Polaroids and create
-    one ZIP file in memory.
+    Download selected Polaroids and create one ZIP.
 
-    One queue row = one image file.
+    Selected rows are sorted by Shopify order number
+    before 01_, 02_, 03_ numbering is assigned.
     """
+
+    sorted_polaroids = sorted(
+        polaroids,
+        key=lambda row: (
+            get_order_number(
+                row.get("order")
+            ),
+            str(
+                row.get("line_item_id")
+                or ""
+            ),
+            str(
+                row.get("bundle_group_id")
+                or ""
+            ),
+        )
+    )
 
     zip_buffer = io.BytesIO()
 
@@ -184,14 +230,14 @@ def build_polaroid_zip(polaroids, delivery_date):
     ) as zip_file:
 
         for sequence, polaroid in enumerate(
-            polaroids,
+            sorted_polaroids,
             start=1
         ):
-            photo_url = polaroid.get(
-                "photo_url"
-            )
-
             try:
+                photo_url = polaroid.get(
+                    "photo_url"
+                )
+
                 (
                     image_bytes,
                     content_type,
@@ -224,13 +270,7 @@ def build_polaroid_zip(polaroids, delivery_date):
                     "recipient": polaroid.get(
                         "recipient"
                     ),
-                    "source": polaroid.get(
-                        "source"
-                    ),
                     "filename": filename,
-                    "content_type": (
-                        content_type
-                    ),
                 })
 
             except Exception as e:
@@ -241,26 +281,20 @@ def build_polaroid_zip(polaroids, delivery_date):
                     "recipient": polaroid.get(
                         "recipient"
                     ),
-                    "source": polaroid.get(
-                        "source"
-                    ),
                     "error": str(e),
                 })
 
     zip_buffer.seek(0)
 
-    clean_date = clean_filename_part(
-        delivery_date
-    )
-
-    zip_filename = (
-        f"TDB_Polaroids_"
-        f"{clean_date}.zip"
-    )
-
     return {
         "bytes": zip_buffer.getvalue(),
-        "filename": zip_filename,
+        "filename": (
+            f"TDB_Polaroids_"
+            f"{clean_filename_part(delivery_date)}"
+            f".zip"
+        ),
+        "delivery_date": delivery_date,
+        "requested": len(sorted_polaroids),
         "successful": successful,
         "failed": failed,
     }
@@ -272,15 +306,16 @@ def display_polaroid_printing():
     st.subheader("Polaroid Printing")
 
     st.caption(
-        "Select a delivery date to prepare all "
-        "Polaroids for that date."
+        "Select a delivery date and choose the "
+        "Polaroids for this print run."
     )
 
-    # ---------------- BUILD QUEUE ----------------
+    # ---------------- REFRESH QUEUE ----------------
 
     if st.button(
         "Refresh Polaroid Queue",
-        type="primary"
+        type="primary",
+        key="refresh_polaroid_queue"
     ):
         with st.spinner(
             "Checking Shopify for Polaroids..."
@@ -289,8 +324,18 @@ def display_polaroid_printing():
                 "polaroid_queue"
             ] = build_polaroid_queue()
 
-        # Clear an old ZIP because the queue
-        # may have changed.
+        # Queue may have changed, so clear
+        # previous selection and prepared ZIP.
+        st.session_state.pop(
+            "polaroid_selected_ids",
+            None
+        )
+
+        st.session_state.pop(
+            "polaroid_selection_date",
+            None
+        )
+
         st.session_state.pop(
             "polaroid_batch_zip",
             None
@@ -313,7 +358,7 @@ def display_polaroid_printing():
         )
         return
 
-    # ---------------- DELIVERY DATES ----------------
+    # ---------------- DELIVERY DATE ----------------
 
     delivery_dates = sorted({
         str(polaroid.get("delivery_date"))
@@ -342,11 +387,62 @@ def display_polaroid_printing():
         ) == selected_date
     ]
 
+    # Sort table by Shopify order number.
+    date_polaroids = sorted(
+        date_polaroids,
+        key=lambda row: (
+            get_order_number(
+                row.get("order")
+            ),
+            str(
+                row.get("line_item_id")
+                or ""
+            ),
+        )
+    )
+
+    # ---------------- SELECTION STATE ----------------
+
+    current_date_state = (
+        st.session_state.get(
+            "polaroid_selection_date"
+        )
+    )
+
+    if current_date_state != selected_date:
+
+        # For now every detected Polaroid is Pending,
+        # so preselect all Pending Polaroids.
+        st.session_state[
+            "polaroid_selected_ids"
+        ] = {
+            get_polaroid_id(polaroid)
+            for polaroid in date_polaroids
+        }
+
+        st.session_state[
+            "polaroid_selection_date"
+        ] = selected_date
+
+        st.session_state.pop(
+            "polaroid_batch_zip",
+            None
+        )
+
+    selected_ids = set(
+        st.session_state.get(
+            "polaroid_selected_ids",
+            set()
+        )
+    )
+
+    # ---------------- METRICS ----------------
+
     required_count = len(
         date_polaroids
     )
 
-    # No persistent print status yet.
+    # Persistence comes in the next phase.
     printed_count = 0
 
     pending_count = (
@@ -354,11 +450,20 @@ def display_polaroid_printing():
         - printed_count
     )
 
-    # ---------------- METRICS ----------------
+    selected_count = len([
+        polaroid
+        for polaroid in date_polaroids
+        if get_polaroid_id(
+            polaroid
+        ) in selected_ids
+    ])
 
-    required_col, printed_col, pending_col = (
-        st.columns(3)
-    )
+    (
+        required_col,
+        printed_col,
+        pending_col,
+        selected_col
+    ) = st.columns(4)
 
     with required_col:
         st.metric(
@@ -378,233 +483,262 @@ def display_polaroid_printing():
             pending_count
         )
 
+    with selected_col:
+        st.metric(
+            "Selected",
+            selected_count
+        )
+
     st.divider()
 
-    # ---------------- PRINT COUNT ----------------
+    # ---------------- BULK CONTROLS ----------------
 
-    st.markdown(
-        f"## {pending_count} "
-        f"POLAROIDS TO PRINT"
+    bulk_col_1, bulk_col_2, bulk_col_3 = (
+        st.columns([1.4, 1, 4])
     )
 
-    st.caption(
-        "All delivery timeslots are combined. "
-        "AM / PM / Night do not create "
-        "separate print batches."
-    )
+    with bulk_col_1:
+        if st.button(
+            "✓ Select All Pending",
+            use_container_width=True,
+            key="select_all_pending"
+        ):
+            st.session_state[
+                "polaroid_selected_ids"
+            ] = {
+                get_polaroid_id(
+                    polaroid
+                )
+                for polaroid
+                in date_polaroids
+            }
 
-    # ---------------- QUEUE PREVIEW ----------------
+            st.session_state.pop(
+                "polaroid_batch_zip",
+                None
+            )
 
-    preview_rows = []
+            st.rerun()
 
-    for index, polaroid in enumerate(
-        date_polaroids,
-        start=1
-    ):
-        preview_rows.append({
-            "#": index,
+    with bulk_col_2:
+        if st.button(
+            "Clear Selection",
+            use_container_width=True,
+            key="clear_polaroid_selection"
+        ):
+            st.session_state[
+                "polaroid_selected_ids"
+            ] = set()
+
+            st.session_state.pop(
+                "polaroid_batch_zip",
+                None
+            )
+
+            st.rerun()
+
+    with bulk_col_3:
+        st.markdown(
+            f"**{selected_count} selected**"
+        )
+
+    # ---------------- SELECTABLE TABLE ----------------
+
+    table_rows = []
+
+    for polaroid in date_polaroids:
+        polaroid_id = get_polaroid_id(
+            polaroid
+        )
+
+        table_rows.append({
+            "Select": (
+                polaroid_id
+                in selected_ids
+            ),
+
+            # Placeholder until persistent
+            # download history is added.
+            "Last Downloaded": "—",
+
             "Order": polaroid.get(
                 "order"
             ),
+
             "Recipient": polaroid.get(
                 "recipient"
             ),
-            "Delivery Slot": polaroid.get(
+
+            "Slot": polaroid.get(
                 "delivery_slot"
             ),
-            "Source": polaroid.get(
-                "source"
-            ),
+
             "Status": "Pending",
+
+            # Hidden working ID.
+            "_polaroid_id": polaroid_id,
         })
 
-    st.dataframe(
-        preview_rows,
+    edited_rows = st.data_editor(
+        table_rows,
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
+        key=(
+            f"polaroid_editor_"
+            f"{selected_date}"
+        ),
+        disabled=[
+            "Last Downloaded",
+            "Order",
+            "Recipient",
+            "Slot",
+            "Status",
+            "_polaroid_id",
+        ],
+        column_config={
+            "Select": st.column_config.CheckboxColumn(
+                "Select",
+                help=(
+                    "Include this Polaroid "
+                    "in the next ZIP."
+                ),
+                default=False,
+            ),
+
+            "Last Downloaded": (
+                st.column_config.TextColumn(
+                    "Last Downloaded"
+                )
+            ),
+
+            "Order": (
+                st.column_config.TextColumn(
+                    "Order"
+                )
+            ),
+
+            "Recipient": (
+                st.column_config.TextColumn(
+                    "Recipient"
+                )
+            ),
+
+            "Slot": (
+                st.column_config.TextColumn(
+                    "Slot"
+                )
+            ),
+
+            "Status": (
+                st.column_config.TextColumn(
+                    "Status"
+                )
+            ),
+
+            "_polaroid_id": None,
+        }
     )
 
-    # ---------------- CREATE ZIP ----------------
+    # ---------------- READ CHECKBOX CHANGES ----------------
+
+    new_selected_ids = {
+        row["_polaroid_id"]
+        for row in edited_rows
+        if row.get("Select")
+    }
+
+    if new_selected_ids != selected_ids:
+        st.session_state[
+            "polaroid_selected_ids"
+        ] = new_selected_ids
+
+        st.session_state.pop(
+            "polaroid_batch_zip",
+            None
+        )
+
+        selected_ids = (
+            new_selected_ids
+        )
+
+    selected_polaroids = [
+        polaroid
+        for polaroid in date_polaroids
+        if get_polaroid_id(
+            polaroid
+        ) in selected_ids
+    ]
+
+    selected_count = len(
+        selected_polaroids
+    )
+
+    # ---------------- DOWNLOAD AREA ----------------
 
     st.divider()
 
+    st.markdown(
+        f"## {selected_count} "
+        f"POLAROID"
+        f"{'S' if selected_count != 1 else ''} "
+        f"SELECTED"
+    )
+
+    st.caption(
+        "Only selected rows will be included "
+        "in this ZIP."
+    )
+
     if st.button(
-        f"Prepare {pending_count} Polaroids",
+        (
+            f"Prepare {selected_count} "
+            f"Polaroid"
+            f"{'s' if selected_count != 1 else ''}"
+        ),
         type="primary",
         use_container_width=True,
-        disabled=(pending_count == 0)
+        disabled=(selected_count == 0),
+        key="prepare_selected_polaroids"
     ):
-
-        progress_bar = st.progress(
-            0,
-            text="Preparing Polaroids..."
-        )
-
-        try:
-            total = len(
-                date_polaroids
-            )
-
-            # Build manually here so we can
-            # display progress to the user.
-            zip_buffer = io.BytesIO()
-
-            successful = []
-            failed = []
-
-            with zipfile.ZipFile(
-                zip_buffer,
-                mode="w",
-                compression=(
-                    zipfile.ZIP_DEFLATED
+        with st.spinner(
+            f"Preparing "
+            f"{selected_count} Polaroids..."
+        ):
+            try:
+                batch_result = (
+                    prepare_selected_polaroids(
+                        selected_polaroids,
+                        selected_date
+                    )
                 )
-            ) as zip_file:
 
-                for sequence, polaroid in enumerate(
-                    date_polaroids,
-                    start=1
-                ):
-                    photo_url = (
-                        polaroid.get(
-                            "photo_url"
-                        )
-                    )
+                st.session_state[
+                    "polaroid_batch_zip"
+                ] = batch_result
 
-                    try:
-                        (
-                            image_bytes,
-                            content_type,
-                            extension
-                        ) = fetch_polaroid_image(
-                            photo_url
-                        )
-
-                        filename_base = (
-                            build_polaroid_filename(
-                                polaroid,
-                                sequence
-                            )
-                        )
-
-                        filename = (
-                            f"{filename_base}."
-                            f"{extension}"
-                        )
-
-                        zip_file.writestr(
-                            filename,
-                            image_bytes
-                        )
-
-                        successful.append({
-                            "order": (
-                                polaroid.get(
-                                    "order"
-                                )
-                            ),
-                            "recipient": (
-                                polaroid.get(
-                                    "recipient"
-                                )
-                            ),
-                            "filename": (
-                                filename
-                            ),
-                        })
-
-                    except Exception as e:
-                        failed.append({
-                            "order": (
-                                polaroid.get(
-                                    "order"
-                                )
-                            ),
-                            "recipient": (
-                                polaroid.get(
-                                    "recipient"
-                                )
-                            ),
-                            "error": str(e),
-                        })
-
-                    progress = (
-                        sequence / total
-                    )
-
-                    progress_bar.progress(
-                        progress,
-                        text=(
-                            f"Preparing "
-                            f"{sequence} of "
-                            f"{total}..."
-                        )
-                    )
-
-            zip_buffer.seek(0)
-
-            batch_result = {
-                "bytes": (
-                    zip_buffer.getvalue()
-                ),
-                "filename": (
-                    f"TDB_Polaroids_"
-                    f"{clean_filename_part(selected_date)}"
-                    f".zip"
-                ),
-                "delivery_date": (
-                    selected_date
-                ),
-                "requested": (
-                    required_count
-                ),
-                "successful": (
-                    successful
-                ),
-                "failed": (
-                    failed
-                ),
-            }
-
-            st.session_state[
-                "polaroid_batch_zip"
-            ] = batch_result
-
-            progress_bar.empty()
-
-        except Exception as e:
-            progress_bar.empty()
-
-            st.error(
-                f"Could not prepare batch: {e}"
-            )
-
-    # ---------------- DOWNLOAD ZIP ----------------
+            except Exception as e:
+                st.error(
+                    f"Could not prepare batch: {e}"
+                )
 
     batch_result = st.session_state.get(
         "polaroid_batch_zip"
     )
 
-    # Only show ZIP if it belongs to
-    # the currently selected date.
     if (
         batch_result
         and batch_result.get(
             "delivery_date"
         ) == selected_date
     ):
-
-        successful = (
-            batch_result.get(
-                "successful",
-                []
-            )
+        successful = batch_result.get(
+            "successful",
+            []
         )
 
-        failed = (
-            batch_result.get(
-                "failed",
-                []
-            )
+        failed = batch_result.get(
+            "failed",
+            []
         )
 
         successful_count = len(
@@ -617,25 +751,27 @@ def display_polaroid_printing():
 
         if successful_count:
             st.success(
-                f"{successful_count} files ready "
-                f"for download."
+                f"{successful_count} files "
+                f"ready for download."
             )
 
             st.download_button(
                 label=(
                     f"Download "
                     f"{successful_count} "
-                    f"Polaroids"
+                    f"Polaroid"
+                    f"{'s' if successful_count != 1 else ''}"
                 ),
-                data=batch_result[
-                    "bytes"
-                ],
-                file_name=batch_result[
-                    "filename"
-                ],
+                data=batch_result["bytes"],
+                file_name=(
+                    batch_result[
+                        "filename"
+                    ]
+                ),
                 mime="application/zip",
                 type="primary",
-                use_container_width=True
+                use_container_width=True,
+                key="download_polaroid_zip"
             )
 
             st.info(
@@ -650,7 +786,8 @@ def display_polaroid_printing():
                 f"{failed_count} Polaroid"
                 f"{'s' if failed_count != 1 else ''} "
                 f"could not be downloaded. "
-                f"Do not treat this as a complete batch."
+                f"Do not treat this as "
+                f"a complete batch."
             )
 
             with st.expander(
@@ -1027,6 +1164,7 @@ def display_polaroid_test():
     # ---------------- QUEUE TEST ----------------
 
     st.divider()
+
     st.subheader(
         "Polaroid Queue Test"
     )
@@ -1056,8 +1194,6 @@ def display_polaroid_test():
             queue,
             use_container_width=True
         )
-
-        # ---------------- SINGLE DOWNLOAD ----------------
 
         st.divider()
 
