@@ -699,23 +699,6 @@ def display_polaroid_printing():
                 f"ready for download."
             )
 
-            st.download_button(
-                label=(
-                    f"Download "
-                    f"{successful_count} "
-                    f"Polaroid"
-                    f"{'s' if successful_count != 1 else ''}"
-                ),
-                data=batch_result["bytes"],
-                file_name=(
-                    batch_result[
-                        "filename"
-                    ]
-                ),
-                mime="application/zip",
-                type="primary",
-                key="download_polaroid_zip"
-            )
 
             st.info(
                 f"{successful_count} files "
@@ -750,6 +733,24 @@ def display_polaroid_printing():
                 use_container_width=True,
                 hide_index=True
             )
+
+        st.download_button(
+                label=(
+                    f"Download "
+                    f"{successful_count} "
+                    f"Polaroid"
+                    f"{'s' if successful_count != 1 else ''}"
+                ),
+                data=batch_result["bytes"],
+                file_name=(
+                    batch_result[
+                        "filename"
+                    ]
+                ),
+                mime="application/zip",
+                type="primary",
+                key="download_polaroid_zip"
+            )    
 
 
 # ----------------------- POLAROID TESTING -----------------------
