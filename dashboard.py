@@ -1399,8 +1399,7 @@ with refresh_col:
 ) = st.tabs([
     "Orders",
     "Detrack Sync",
-    "Polaroid Printing",
-    "Polaroid Test"
+    "Polaroid Printing"
 ])
 
 
@@ -1421,9 +1420,6 @@ with detrack_tab:
 with polaroid_tab:
     display_polaroid_printing()
 
-
-with polaroid_test_tab:
-    display_polaroid_test()
 
 
 # Insert empty space to optimise UI
