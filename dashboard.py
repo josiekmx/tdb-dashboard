@@ -436,7 +436,11 @@ def display_polaroid_printing():
         )
     )
 
-
+    selected_count = len([
+        polaroid
+        for polaroid in date_polaroids
+        if get_polaroid_id(polaroid) in selected_ids
+    ])
 
     # ---------------- BULK CONTROLS ----------------
 
