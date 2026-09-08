@@ -90,6 +90,7 @@ def style_status(value):
 
     return styles.get(value, "")
 
+
 # ---------------------------------------------------------
 # DELIVERY RECONCILIATION CARDS
 # ---------------------------------------------------------
@@ -268,7 +269,7 @@ def display_detrack_sync():
 
     display_delivery_sync_cards(
         cycle_summary
-    )    
+    )
 
     # ---------------------------------------------------------
     # ORDER STATUS TABLE
@@ -309,6 +310,30 @@ def display_detrack_sync():
         })
 
     df = pd.DataFrame(rows)
+
+    # Sort statuses by operational priority:
+    # ERROR → WARNING → PENDING → UPLOADED
+    status_order = {
+        "ERROR": 1,
+        "WARNING": 2,
+        "PENDING": 3,
+        "UPLOADED": 4,
+    }
+
+    df["_status_order"] = (
+        df["Status"]
+        .map(status_order)
+        .fillna(99)
+    )
+
+    df = (
+        df.sort_values(
+            "_status_order"
+        )
+        .drop(
+            columns=["_status_order"]
+        )
+    )
 
     # Apply colour styling to Status column
     styled_df = df.style.map(
@@ -363,7 +388,7 @@ def display_detrack_sync():
             "Total in Detrack",
             len(existing_detrack_orders),
             border=True
-    )
+        )
 
     with col2:
         st.metric(
