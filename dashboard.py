@@ -500,6 +500,8 @@ def display_polaroid_printing():
                 in selected_ids
             ),
 
+            "Detrack Status": detrack_status,
+
             # Placeholder until persistent
             # download history is added.
             "Purchased At": format_purchase_time(
@@ -533,7 +535,7 @@ def display_polaroid_printing():
             f"{selected_date}"
         ),
         disabled=[
-            "Last Downloaded",
+            "Detrack Status",
             "Order",
             "Recipient",
             "Slot",
