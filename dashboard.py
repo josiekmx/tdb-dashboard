@@ -325,26 +325,31 @@ def format_purchase_time(value):
 
 def display_polaroid_printing():
 
+def display_polaroid_printing():
+
+    st.subheader("Polaroid Printing")
+
     if st.button(
         "🔄 Pull Latest Orders",
         type="primary",
         use_container_width=False,
+        key="refresh_polaroid_orders",
     ):
-    # Clear cached Shopify/order data
-    st.cache_data.clear()
+        # Clear cached Shopify/order data
+        st.cache_data.clear()
 
-    # Remove any Polaroid-specific session cache if used
-    for key in [
-        "polaroid_queue",
-        "polaroid_orders",
-        "polaroid_data",
-    ]:
-        if key in st.session_state:
-            del st.session_state[key]
+        # Remove any Polaroid-specific session cache
+        for key in [
+            "polaroid_queue",
+            "polaroid_orders",
+            "polaroid_data",
+        ]:
+            if key in st.session_state:
+                del st.session_state[key]
 
-    st.rerun()
+        st.rerun()
 
-    st.subheader("Polaroid Printing")
+    # Your existing Polaroid page code continues here
 
     # ---------------- LOAD QUEUE ----------------
 
