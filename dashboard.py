@@ -323,7 +323,6 @@ def format_purchase_time(value):
 
 # ----------------------- POLAROID PRINTING -----------------------
 
-def display_polaroid_printing():
 
 def display_polaroid_printing():
 
