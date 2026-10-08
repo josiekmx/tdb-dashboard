@@ -329,7 +329,7 @@ def display_polaroid_printing():
     "🔄 Pull Latest Orders",
     type="primary",
     use_container_width=False,
-):
+    ):
     # Clear cached Shopify/order data
     st.cache_data.clear()
 
@@ -343,7 +343,7 @@ def display_polaroid_printing():
             del st.session_state[key]
 
     st.rerun()
-    
+
     st.subheader("Polaroid Printing")
 
     # ---------------- LOAD QUEUE ----------------
