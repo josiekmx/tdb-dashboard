@@ -326,9 +326,9 @@ def format_purchase_time(value):
 def display_polaroid_printing():
 
     if st.button(
-    "🔄 Pull Latest Orders",
-    type="primary",
-    use_container_width=False,
+        "🔄 Pull Latest Orders",
+        type="primary",
+        use_container_width=False,
     ):
     # Clear cached Shopify/order data
     st.cache_data.clear()
