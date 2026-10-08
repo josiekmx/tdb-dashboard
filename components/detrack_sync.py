@@ -299,9 +299,9 @@ def display_detrack_sync():
             ),
             "Status": display_status,
             "Order": order.order_number,
+            "Recipient": order.recipient_name,
             "Type": order.delivery_type,
             "Timeslot": map_timeslot_to_detrack(order),
-            "Recipient": order.recipient_name,
             "Tags": order.number_of_tags,
             "Status": display_status,
             "Issues": ", ".join(
