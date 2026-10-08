@@ -227,6 +227,7 @@ def create_diagnostic_row(
     }
 
 
+
 def build_polaroid_results():
     """
     Build Polaroid detection results.
@@ -262,6 +263,21 @@ def build_polaroid_results():
     seen_direct_photos = set()
 
     for order in orders:
+
+        # ---------------------------------------------
+        # FULFILLMENT FILTER
+        # ---------------------------------------------
+        # Only include:
+        #   None      = completely unfulfilled
+        #   "partial" = partially fulfilled
+        #
+        # Fully fulfilled orders are excluded,
+        # regardless of whether they are still
+        # open / unarchived in Shopify.
+        fulfillment_status = order.get("fulfillment_status")
+
+        if fulfillment_status not in (None, "partial"):
+            continue
 
         # Avoid unnecessary GraphQL calls
         if not has_possible_polaroid(order):
@@ -553,7 +569,6 @@ def build_polaroid_results():
         "queue": queue,
         "diagnostics": diagnostics,
     }
-
 
 def build_polaroid_queue():
     """
