@@ -329,7 +329,7 @@ def display_polaroid_printing():
     st.subheader("Polaroid Printing")
 
     if st.button(
-        "🔄 Pull Latest Orders",
+        "Pull Latest Orders",
         type="primary",
         use_container_width=False,
         key="refresh_polaroid_orders",
