@@ -4,6 +4,10 @@ from order_processor import (
     get_delivery_slot,
     standardise_date,
 )
+from detrack.order_builder import (
+    get_date_from_tags,
+    get_timeslot_from_tags,
+)
 
 
 PHOTO_UPLOAD_KEY = "Photo Upload"
@@ -383,7 +387,8 @@ def build_polaroid_results():
                     if is_full_url(bundle_photo):
 
                         delivery_date = (
-                            find_attribute_delivery_date(
+                            get_date_from_tags(order.get("tags"))
+                            or find_attribute_delivery_date(
                                 bundle_attributes
                             )
                             or find_order_delivery_date(
@@ -392,7 +397,8 @@ def build_polaroid_results():
                         )
 
                         delivery_slot = (
-                            find_attribute_delivery_slot(
+                            get_timeslot_from_tags(order.get("tags"))
+                            or find_attribute_delivery_slot(
                                 bundle_attributes
                             )
                             or find_order_delivery_slot(
@@ -514,7 +520,8 @@ def build_polaroid_results():
                 continue
 
             delivery_date = (
-                find_attribute_delivery_date(
+                get_date_from_tags(order.get("tags"))
+                or find_attribute_delivery_date(
                     direct_attributes
                 )
                 or standardise_date(
@@ -529,7 +536,8 @@ def build_polaroid_results():
             )
 
             delivery_slot = (
-                find_attribute_delivery_slot(
+                get_timeslot_from_tags(order.get("tags"))
+                or ind_attribute_delivery_slot(
                     direct_attributes
                 )
                 or (
