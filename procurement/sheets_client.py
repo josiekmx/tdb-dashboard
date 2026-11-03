@@ -1,21 +1,16 @@
 
-import gspread
 import streamlit as st
-from google.oauth2.service_account import Credentials
+
+from detrack.sku_mapping import get_google_client
 
 
 @st.cache_data(ttl=300)
 def get_flower_recipe_rows():
-    scopes = [
-        "https://www.googleapis.com/auth/spreadsheets.readonly"
-    ]
-
-    credentials = Credentials.from_service_account_info(
-        dict(st.secrets["google_service_account"]),
-        scopes=scopes,
-    )
-
-    client = gspread.authorize(credentials)
+    """
+    Read the Flower Recipe worksheet using the
+    existing Detrack Google Sheets connection.
+    """
+    client = get_google_client()
 
     spreadsheet = client.open("Flower Inventory")
     worksheet = spreadsheet.worksheet("Flower Recipe")
