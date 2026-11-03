@@ -16,6 +16,8 @@ from polaroid.queue import build_polaroid_queue
 from datetime import datetime
 from detrack.client import get_existing_detrack_order_numbers
 
+from procurement.ui import display_procurement_test
+
 
 # ----------------------- POLAROID HELPERS -----------------------
 
@@ -1402,11 +1404,13 @@ with refresh_col:
 (
     orders_tab,
     detrack_tab,
-    polaroid_tab
+    polaroid_tab,
+    procurement_tab
 ) = st.tabs([
     "Orders",
     "Detrack",
-    "Polaroid"
+    "Polaroid",
+    "Test Procurement"
 ])
 
 
@@ -1428,6 +1432,8 @@ with polaroid_tab:
     display_polaroid_printing()
 
 
+with procurement_tab:
+    display_procurement_test()
 
 # Insert empty space to optimise UI
 st.markdown(
