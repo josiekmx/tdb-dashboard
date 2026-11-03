@@ -4,6 +4,9 @@ import streamlit as st
 
 from procurement.sheets_client import get_flower_recipe_rows
 from procurement.recipes import lookup_recipe
+from datetime import date, timedelta
+from shopify_client import get_orders
+from procurement.order_demand import build_order_demand
 
 
 def display_procurement_test():
@@ -140,3 +143,99 @@ def display_procurement_test():
 
         except Exception as error:
             st.error(f"SKU lookup failed: {error}")
+
+
+
+    # ---------------------------------------
+    # Stage 3: Shopify Order Demand
+    # ---------------------------------------
+
+    st.divider()
+    st.subheader("📦 Stage 3: Shopify Order Demand")
+
+    st.caption(
+        "Preliminary test: uses the existing Shopify REST "
+        "function, limited to up to 250 open orders."
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        start_date = st.date_input(
+            "Delivery Date From",
+            value=date.today(),
+            key="procurement_start_date",
+        )
+
+    with col2:
+        end_date = st.date_input(
+            "Delivery Date To",
+            value=date.today() + timedelta(days=7),
+            key="procurement_end_date",
+        )
+
+    if st.button("🔄 Pull Shopify Demand"):
+        if start_date > end_date:
+            st.error("End date must be on or after start date.")
+        else:
+            try:
+                with st.spinner("Fetching Shopify orders..."):
+                    orders = get_orders()
+
+                    result = build_order_demand(
+                        orders,
+                        start_date,
+                        end_date,
+                    )
+
+                st.warning(
+                    "Preliminary demand only. Archived orders "
+                    "and pagination are not yet included."
+                )
+
+                col1, col2, col3 = st.columns(3)
+
+                col1.metric(
+                    "Orders in Date Range",
+                    result["orders_count"],
+                )
+
+                col2.metric(
+                    "Outstanding Units",
+                    result["total_outstanding"],
+                )
+
+                col3.metric(
+                    "Warnings",
+                    len(result["warnings"]),
+                )
+
+                st.subheader("Outstanding SKU Demand")
+
+                if result["demand_rows"]:
+                    st.dataframe(
+                        pd.DataFrame(result["demand_rows"]),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                else:
+                    st.info(
+                        "No outstanding SKU demand found "
+                        "in the fetched orders."
+                    )
+
+                if result["warnings"]:
+                    with st.expander(
+                        "⚠️ Orders Requiring Review"
+                    ):
+                        st.dataframe(
+                            pd.DataFrame(result["warnings"]),
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+
+            except Exception as error:
+                st.error(
+                    f"Shopify demand test failed: {error}"
+                )
+
